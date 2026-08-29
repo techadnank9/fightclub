@@ -130,7 +130,7 @@ async def start_fight(request: Request):
     if not replay and not env.get("TARGET_REPO"):
         # No throwaway repo configured yet: fall back to the recorded fixture
         # so the full pipeline still demos end to end.
-        replay = "tests/fixtures/sample_fight.jsonl"
+        replay = "tests/fixtures/showcase_fight.jsonl"
 
     # Bound the session registry: evict oldest finished sessions
     if len(SESSIONS) > 40:

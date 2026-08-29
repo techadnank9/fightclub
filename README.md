@@ -163,10 +163,6 @@ uvicorn server.app:app --port 8000
 # open http://localhost:8000  → click a building → START FIGHT
 ```
 
-No API keys configured? START FIGHT still plays a full fight from a recorded
-session, so the demo always runs. With keys in `harness/.env` (see
-`harness/llm.py`) every fight is live: real sandboxes, real commits, real PR.
-
 ```bash
 # fight from the terminal, no browser
 python -m harness.fight --repo vercel/next.js \

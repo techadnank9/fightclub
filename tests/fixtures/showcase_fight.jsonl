@@ -1,0 +1,32 @@
+{"type": "session.opened", "ts": 1788045674.897, "session": "fight-641b", "repo": "vercel/next.js", "task": "slugify still collapses runs incorrectly for unicode dashes and truncate must never exceed the limit; make the suite pass"}
+{"type": "fighter.started", "ts": 1788045675.925, "side": "b", "agent": "gemini", "sandbox": "sb-b-641b", "branch": "fight/b-641b"}
+{"type": "fighter.started", "ts": 1788045675.925, "side": "a", "agent": "sonnet", "sandbox": "sb-a-641b", "branch": "fight/a-641b"}
+{"type": "tool.called", "ts": 1788045678.136, "side": "a", "tool": "list files"}
+{"type": "tool.called", "ts": 1788045678.492, "side": "b", "tool": "list files"}
+{"type": "tool.called", "ts": 1788045679.269, "side": "a", "tool": "read __init__.py"}
+{"type": "tool.called", "ts": 1788045679.437, "side": "b", "tool": "read __init__.py"}
+{"type": "tool.called", "ts": 1788045680.267, "side": "a", "tool": "read test_textkit.py"}
+{"type": "tool.called", "ts": 1788045681.471, "side": "a", "tool": "read README.md"}
+{"type": "tool.called", "ts": 1788045682.315, "side": "a", "tool": "run tests"}
+{"type": "tests.result", "ts": 1788045683.294, "side": "a", "ok": false, "passed": 3, "total": 5}
+{"type": "tool.called", "ts": 1788045683.644, "side": "b", "tool": "read test_textkit.py"}
+{"type": "tool.called", "ts": 1788045685.834, "side": "a", "tool": "write __init__.py"}
+{"type": "tool.called", "ts": 1788045687.353, "side": "a", "tool": "commit"}
+{"type": "commit.pushed", "ts": 1788045687.47, "side": "a", "sha": "cb71f37", "msg": "fix: strip leading/trailing hyphens in slugify, prevent trun"}
+{"type": "tool.called", "ts": 1788045688.416, "side": "a", "tool": "run tests"}
+{"type": "tests.result", "ts": 1788045689.4, "side": "a", "ok": true, "passed": 5, "total": 5}
+{"type": "tool.called", "ts": 1788045692.041, "side": "a", "tool": "write test_textkit.py"}
+{"type": "tool.called", "ts": 1788045693.63, "side": "a", "tool": "commit"}
+{"type": "commit.pushed", "ts": 1788045693.744, "side": "a", "sha": "3832547", "msg": "test: add regressions for unicode dash in slugify and trunca"}
+{"type": "tool.called", "ts": 1788045694.887, "side": "a", "tool": "run tests"}
+{"type": "tests.result", "ts": 1788045695.749, "side": "a", "ok": true, "passed": 7, "total": 7}
+{"type": "fighter.done", "ts": 1788045696.991, "side": "a"}
+{"type": "fighter.done", "ts": 1788045705.609, "side": "b"}
+{"type": "referee.spawned", "ts": 1788045707.87, "sandbox": "sb-ref-641b"}
+{"type": "tests.result", "ts": 1788045709.509, "side": "a", "ok": true, "passed": 5, "total": 5, "by": "referee"}
+{"type": "referee.finding", "ts": 1788045710.992, "side": "a", "severity": "medium", "msg": "slugify does not collapse runs of unicode dashes (e.g. en dash, em dash); test expects collapsing unicode dashes and str"}
+{"type": "referee.finding", "ts": 1788045710.992, "side": "a", "severity": "medium", "msg": "slugify does not currently strip leading/trailing ASCII/Unicode dashes after replacing non-alphanumerics; added .strip('"}
+{"type": "referee.finding", "ts": 1788045710.992, "side": "a", "severity": "low", "msg": "Added tests are tightly related, no unrelated churn."}
+{"type": "tests.result", "ts": 1788045712.337, "side": "b", "ok": false, "passed": 3, "total": 5, "by": "referee"}
+{"type": "verdict", "ts": 1788045717.167, "winner": "a", "score": {"a": 85, "b": 76}, "breakdown": {"a": {"tests": 60.0, "review": 10.0, "economy": 15.0, "passed": 5, "total": 5, "findings": 3, "diffLines": 5}, "b": {"tests": 36.0, "review": 25, "economy": 15.0, "passed": 3, "total": 5, "findings": 0, "diffLines": 0}}, "pr": 2, "deleted": "fight/b-641b"}
+{"type": "session.closed", "ts": 1788045717.372}

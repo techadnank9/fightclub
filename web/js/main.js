@@ -222,9 +222,22 @@ setupEl.querySelector('#setup-start').addEventListener('click', () => {
     }).then((r) => {
       if (!r.ok) throw new Error(`fight failed: ${r.status}`);
       return r.json();
-    }).then(({ session }) => connectSession(session)).catch(() => {
-      // No backend running: fall back to the mock so the demo never bricks.
-      startMockFight({ repo: repoName, task, a, b });
+    }).then(({ session }) => connectSession(session)).catch(async () => {
+      // No backend reachable: replay the bundled recording of a real fight.
+      try {
+        const text = await fetch('./data/real_fight.jsonl').then((r) => r.text());
+        const events = text.split('\n').filter((l) => l.startsWith('{')).map((l) => JSON.parse(l));
+        let prev = null;
+        let delay = 400;
+        for (const ev of events) {
+          const gap = prev != null && ev.ts ? Math.min(2.6, Math.max(0.15, ev.ts - prev)) : 0;
+          prev = ev.ts ?? prev;
+          delay += gap * 1000;
+          setTimeout(() => dispatch(ev), delay);
+        }
+      } catch {
+        startMockFight({ repo: repoName, task, a, b });
+      }
     });
   }
 });
