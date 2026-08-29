@@ -163,6 +163,122 @@
   #verdict .deleted { font-size: 11px; color: var(--bad); margin-top: 4px; }
   #verdict button { margin-top: 16px; }
 
+  /* ── Past fights ─────────────────────────── */
+  #topbar #history-open {
+    pointer-events: auto; cursor: pointer; background: transparent;
+    border: 1px solid var(--panel-border); border-radius: 6px; color: var(--ink);
+    font-family: inherit; font-size: 10px; letter-spacing: 1px; padding: 4px 8px;
+  }
+  #topbar #history-open:hover { background: rgba(255,255,255,.08); }
+
+  #history {
+    position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+    width: min(760px, 92vw); max-height: 72vh; z-index: 45; display: none;
+    padding: 16px 18px; overflow: hidden;
+  }
+  #history .hhead {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--panel-border);
+  }
+  #history .htitle { font-size: 13px; font-weight: bold; letter-spacing: 2px; }
+  #history .hsub { color: var(--ink-dim); font-size: 10px; margin-top: 3px; }
+  #history .hbtns { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+  #history .hspeed { font-size: 10px; color: var(--ink-dim); letter-spacing: 1px; }
+  #history .hspeed select {
+    background: #0a0f22; color: var(--ink); border: 1px solid var(--panel-border);
+    border-radius: 4px; font-family: inherit; font-size: 10px; padding: 3px 4px; margin-left: 4px;
+  }
+  #history .hbtns button { width: auto; flex: 0 0 auto; padding: 6px 12px; font-size: 10px; }
+
+  #history-list { margin-top: 10px; max-height: 56vh; overflow-y: auto; }
+  #history .hempty { color: var(--ink-dim); font-size: 11px; font-style: italic; padding: 14px 2px; line-height: 1.6; }
+  #history .hempty code { font-style: normal; color: var(--ink); }
+  #history .hrow {
+    display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    padding: 9px 8px; border-bottom: 1px dotted #1e2846; cursor: pointer; border-radius: 5px;
+  }
+  #history .hrow:hover { background: rgba(255,255,255,.05); }
+  #history .hmain { min-width: 0; }
+  #history .hrepo { font-size: 12px; }
+  #history .htask {
+    color: var(--ink-dim); font-size: 10px; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw;
+  }
+  #history .hside { text-align: right; flex: 0 0 auto; }
+  #history .hwin { font-size: 11px; font-weight: bold; }
+  #history .hwin.w-a { color: var(--a); }
+  #history .hwin.w-b { color: var(--b); }
+  #history .hwin.w-none { color: var(--ink-dim); font-weight: normal; font-style: italic; }
+  #history .hmeta { color: var(--ink-dim); font-size: 10px; margin-top: 2px; }
+  #history .hrow.partial { opacity: .72; }
+  #history .hrow.loading { opacity: .5; pointer-events: none; }
+  #history .hrow.failed .hmeta { color: var(--bad); }
+
+  /* ── Full fight log overlay ──────────────── */
+  #harness h3 { display: flex; justify-content: space-between; align-items: center; }
+  #details-open {
+    cursor: pointer; background: transparent; border: 1px solid var(--panel-border);
+    border-radius: 4px; color: var(--ink-dim); font-family: inherit; font-size: 9px;
+    letter-spacing: 1px; padding: 2px 6px;
+  }
+  #details-open:hover { background: rgba(255,255,255,.08); color: var(--ink); }
+
+  #details {
+    position: fixed; inset: 5vh 4vw; z-index: 50; display: none;
+    flex-direction: column; padding: 18px 20px; font-size: 12px;
+  }
+  #details .dhead {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--panel-border);
+  }
+  #details-task { font-size: 13px; }
+  #details-session { color: var(--ink-dim); font-size: 11px; margin-top: 3px; }
+  #details .dbtns { display: flex; gap: 8px; flex: 0 0 auto; }
+  #details .dbtns button { width: auto; padding: 6px 12px; font-size: 10px; white-space: nowrap; }
+
+  #details .dcols { display: flex; gap: 18px; flex: 1; min-height: 0; padding: 14px 0; }
+  #details .dcol { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #details .dtop { display: flex; justify-content: space-between; align-items: baseline; font-weight: bold; }
+  #details .dcol[data-side="a"] .dagent { color: var(--a); }
+  #details .dcol[data-side="b"] .dagent { color: var(--b); }
+  #details .dbadge { font-size: 10px; letter-spacing: 1px; }
+  #details .dbadge.win { color: var(--good); }
+  #details .dbadge.lose { color: var(--bad); }
+  #details .dmeta { color: var(--ink-dim); font-size: 10px; margin: 4px 0 8px; }
+  #details .drows {
+    flex: 1; overflow-y: auto; min-height: 0;
+    border-top: 1px solid var(--panel-border); padding-right: 6px;
+  }
+  #details .drow { padding: 4px 0; border-bottom: 1px dotted #1e2846; line-height: 1.45; }
+  #details .drow.tool { color: var(--ink-dim); font-size: 11px; }
+  #details .drow.tests { color: var(--good); font-size: 11px; }
+  #details .drow.tests.fail { color: var(--bad); }
+  #details .drow.reftests { color: var(--ref); font-size: 11px; }
+  #details .drow.reftests.fail { color: var(--bad); }
+  #details .dscore { display: none; margin-bottom: 10px; }
+  #details .dscomp { display: flex; align-items: center; gap: 8px; font-size: 10px; padding: 2px 0; }
+  #details .dscomp .sn { flex: 0 0 52px; color: var(--ink-dim); }
+  #details .dscomp .sbar { flex: 0 0 70px; height: 5px; background: #1a2340; border-radius: 3px; overflow: hidden; }
+  #details .dscomp .sbar i { display: block; height: 100%; background: var(--ref); }
+  #details .dscomp .sv { flex: 0 0 58px; }
+  #details .dscomp .sd { color: var(--ink-dim); overflow-wrap: anywhere; }
+  #details .drow.done { color: var(--ink-dim); font-style: italic; font-size: 11px; }
+  #details .drow.empty { color: var(--ink-dim); font-style: italic; border: 0; }
+  #details .drow.commit { display: flex; gap: 8px; align-items: baseline; }
+  #details .drow.commit .cn { color: var(--ink-dim); font-size: 10px; flex: 0 0 24px; }
+  #details .drow.commit .sha {
+    flex: 0 0 auto; color: var(--ink); background: #0a0f22;
+    border: 1px solid var(--panel-border); border-radius: 3px; padding: 0 5px; font-size: 11px;
+  }
+  #details .drow.commit .msg { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+  #details .dfoot { border-top: 1px solid var(--panel-border); padding-top: 12px; }
+  #details .dfoot h3 { font-size: 10px; letter-spacing: 1px; color: var(--ink-dim); margin-bottom: 6px; }
+  #details-findings { max-height: 15vh; overflow-y: auto; }
+  #details .dfind { font-size: 11px; padding: 2px 0; color: var(--ref); }
+  #details .dfind.sev-high { color: var(--bad); }
+  #details-verdict { margin-top: 8px; font-size: 12px; color: var(--good); }
+
   /* ── Replay scrubber ─────────────────────── */
   #replaybar {
     position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
@@ -187,6 +303,7 @@
   <span class="title">AGENT FIGHT CITY</span>
   <span class="sub">click a building to start a fight</span>
   <button id="theme-toggle" title="day / night">☀</button>
+  <button id="history-open" title="past fights (H)">⏱ HISTORY</button>
   <button id="space-dive" title="space dive" style="pointer-events:auto;cursor:pointer;background:transparent;border:1px solid var(--panel-border);border-radius:6px;color:var(--ink);font-size:14px;padding:2px 8px;">🌍</button>
 </div>
 
@@ -242,7 +359,7 @@
 </div>
 
 <div id="harness" class="panel">
-  <h3>HARNESS</h3>
+  <h3>HARNESS <button id="details-open" title="full fight log (L)">⛶ FULL LOG</button></h3>
   <div id="sandboxes"></div>
   <div id="eventlog"></div>
 </div>
@@ -275,6 +392,59 @@
   <div class="pr"></div>
   <div class="deleted"></div>
   <button class="primary" id="verdict-close">BACK TO CITY</button>
+</div>
+
+<div id="history" class="panel">
+  <div class="hhead">
+    <div>
+      <div class="htitle">PAST FIGHTS</div>
+      <div class="hsub">replayed through the live event path — the city animates them identically</div>
+    </div>
+    <div class="hbtns">
+      <label class="hspeed">speed
+        <select id="history-speed">
+          <option value="1">1x</option>
+          <option value="4" selected>4x</option>
+          <option value="10">10x</option>
+          <option value="50">50x</option>
+        </select>
+      </label>
+      <button class="ghost" id="history-close">CLOSE</button>
+    </div>
+  </div>
+  <div id="history-list"></div>
+</div>
+
+<div id="details" class="panel">
+  <div class="dhead">
+    <div>
+      <div id="details-task"></div>
+      <div id="details-session"></div>
+    </div>
+    <div class="dbtns">
+      <button class="ghost" id="details-filter">COMMITS ONLY</button>
+      <button class="ghost" id="details-close">CLOSE</button>
+    </div>
+  </div>
+  <div class="dcols">
+    <div class="dcol" data-side="a">
+      <div class="dtop"><span class="dagent">—</span><span class="dbadge"></span></div>
+      <div class="dmeta"></div>
+      <div class="dscore"></div>
+      <div class="drows"></div>
+    </div>
+    <div class="dcol" data-side="b">
+      <div class="dtop"><span class="dagent">—</span><span class="dbadge"></span></div>
+      <div class="dmeta"></div>
+      <div class="dscore"></div>
+      <div class="drows"></div>
+    </div>
+  </div>
+  <div class="dfoot">
+    <h3>REFEREE (QODO)</h3>
+    <div id="details-findings"></div>
+    <div id="details-verdict"></div>
+  </div>
 </div>
 
 <div id="replaybar" class="panel">
