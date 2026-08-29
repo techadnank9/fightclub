@@ -15,3 +15,4 @@ What broke and what we changed, one line each, newest last.
 - Fighters committed __pycache__ and the referee docked them for it; commit_all now excludes bytecode.
 - Replay ▶ button was dead: `togglePlay()` set `playing = true` before calling `scrubTo()`, whose first statement is `stop()` — playback rewound to event 1 and froze. Rewind before arming.
 - Replay `scrubTo()` updated the label but not `range.value`, so the slider handle sat at the end while the label read "event 1/N".
+- Harness feed was a 230px rolling ticker capped at 40 rows, so commits scrolled away and wrapped mid-message; added a full fight log overlay (`⛶ FULL LOG` / `L`) with per-fighter commit lists, a commits-only filter, findings and verdict.

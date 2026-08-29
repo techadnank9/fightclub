@@ -15,6 +15,7 @@ import { CameraRig } from './cameraRig.js';
 import { FightArena } from './fight.js';
 import { Hud } from './hud.js';
 import { Replay } from './replay.js';
+import { Details } from './details.js';
 import { subscribe, dispatch } from './events.js';
 import { startMockFight } from './mock.js';
 
@@ -58,6 +59,7 @@ const space = new SpaceLayer(scene);
 const rig = new CameraRig(camera, renderer.domElement);
 const hud = new Hud();
 const replay = new Replay();
+const details = new Details();
 const arena = new FightArena(scene, {
   shake: (amt) => rig.shake(amt),
   onPhase: () => {},

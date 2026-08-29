@@ -163,6 +163,62 @@
   #verdict .deleted { font-size: 11px; color: var(--bad); margin-top: 4px; }
   #verdict button { margin-top: 16px; }
 
+  /* ── Full fight log overlay ──────────────── */
+  #harness h3 { display: flex; justify-content: space-between; align-items: center; }
+  #details-open {
+    cursor: pointer; background: transparent; border: 1px solid var(--panel-border);
+    border-radius: 4px; color: var(--ink-dim); font-family: inherit; font-size: 9px;
+    letter-spacing: 1px; padding: 2px 6px;
+  }
+  #details-open:hover { background: rgba(255,255,255,.08); color: var(--ink); }
+
+  #details {
+    position: fixed; inset: 5vh 4vw; z-index: 50; display: none;
+    flex-direction: column; padding: 18px 20px; font-size: 12px;
+  }
+  #details .dhead {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--panel-border);
+  }
+  #details-task { font-size: 13px; }
+  #details-session { color: var(--ink-dim); font-size: 11px; margin-top: 3px; }
+  #details .dbtns { display: flex; gap: 8px; flex: 0 0 auto; }
+  #details .dbtns button { width: auto; padding: 6px 12px; font-size: 10px; white-space: nowrap; }
+
+  #details .dcols { display: flex; gap: 18px; flex: 1; min-height: 0; padding: 14px 0; }
+  #details .dcol { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #details .dtop { display: flex; justify-content: space-between; align-items: baseline; font-weight: bold; }
+  #details .dcol[data-side="a"] .dagent { color: var(--a); }
+  #details .dcol[data-side="b"] .dagent { color: var(--b); }
+  #details .dbadge { font-size: 10px; letter-spacing: 1px; }
+  #details .dbadge.win { color: var(--good); }
+  #details .dbadge.lose { color: var(--bad); }
+  #details .dmeta { color: var(--ink-dim); font-size: 10px; margin: 4px 0 8px; }
+  #details .drows {
+    flex: 1; overflow-y: auto; min-height: 0;
+    border-top: 1px solid var(--panel-border); padding-right: 6px;
+  }
+  #details .drow { padding: 4px 0; border-bottom: 1px dotted #1e2846; line-height: 1.45; }
+  #details .drow.tool { color: var(--ink-dim); font-size: 11px; }
+  #details .drow.tests { color: var(--good); font-size: 11px; }
+  #details .drow.tests.fail { color: var(--bad); }
+  #details .drow.done { color: var(--ink-dim); font-style: italic; font-size: 11px; }
+  #details .drow.empty { color: var(--ink-dim); font-style: italic; border: 0; }
+  #details .drow.commit { display: flex; gap: 8px; align-items: baseline; }
+  #details .drow.commit .cn { color: var(--ink-dim); font-size: 10px; flex: 0 0 24px; }
+  #details .drow.commit .sha {
+    flex: 0 0 auto; color: var(--ink); background: #0a0f22;
+    border: 1px solid var(--panel-border); border-radius: 3px; padding: 0 5px; font-size: 11px;
+  }
+  #details .drow.commit .msg { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+  #details .dfoot { border-top: 1px solid var(--panel-border); padding-top: 12px; }
+  #details .dfoot h3 { font-size: 10px; letter-spacing: 1px; color: var(--ink-dim); margin-bottom: 6px; }
+  #details-findings { max-height: 15vh; overflow-y: auto; }
+  #details .dfind { font-size: 11px; padding: 2px 0; color: var(--ref); }
+  #details .dfind.sev-high { color: var(--bad); }
+  #details-verdict { margin-top: 8px; font-size: 12px; color: var(--good); }
+
   /* ── Replay scrubber ─────────────────────── */
   #replaybar {
     position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
@@ -242,7 +298,7 @@
 </div>
 
 <div id="harness" class="panel">
-  <h3>HARNESS</h3>
+  <h3>HARNESS <button id="details-open" title="full fight log (L)">⛶ FULL LOG</button></h3>
   <div id="sandboxes"></div>
   <div id="eventlog"></div>
 </div>
@@ -275,6 +331,36 @@
   <div class="pr"></div>
   <div class="deleted"></div>
   <button class="primary" id="verdict-close">BACK TO CITY</button>
+</div>
+
+<div id="details" class="panel">
+  <div class="dhead">
+    <div>
+      <div id="details-task"></div>
+      <div id="details-session"></div>
+    </div>
+    <div class="dbtns">
+      <button class="ghost" id="details-filter">COMMITS ONLY</button>
+      <button class="ghost" id="details-close">CLOSE</button>
+    </div>
+  </div>
+  <div class="dcols">
+    <div class="dcol" data-side="a">
+      <div class="dtop"><span class="dagent">—</span><span class="dbadge"></span></div>
+      <div class="dmeta"></div>
+      <div class="drows"></div>
+    </div>
+    <div class="dcol" data-side="b">
+      <div class="dtop"><span class="dagent">—</span><span class="dbadge"></span></div>
+      <div class="dmeta"></div>
+      <div class="drows"></div>
+    </div>
+  </div>
+  <div class="dfoot">
+    <h3>REFEREE (QODO)</h3>
+    <div id="details-findings"></div>
+    <div id="details-verdict"></div>
+  </div>
 </div>
 
 <div id="replaybar" class="panel">
