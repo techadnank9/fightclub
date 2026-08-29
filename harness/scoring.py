@@ -12,6 +12,25 @@ from __future__ import annotations
 SEVERITY_WEIGHT = {"high": 0.5, "medium": 0.25, "low": 0.1}
 
 
+def components(passed: int, total: int, findings: list[dict], diff_lines: int) -> dict:
+    """The three weighted parts of the score, each already scaled to its cap."""
+    pass_rate = (passed / total) if total else 0.0
+    sev = min(1.0, sum(SEVERITY_WEIGHT.get(f.get("severity", "low"), 0.1) for f in findings))
+    if diff_lines <= 40:
+        economy = 1.0
+    elif diff_lines >= 400:
+        economy = 0.0
+    else:
+        economy = 1.0 - (diff_lines - 40) / 360
+    return {
+        "tests": round(60 * pass_rate, 1),
+        "review": round(25 * (1 - sev), 1),
+        "economy": round(15 * economy, 1),
+        "passed": passed, "total": total,
+        "findings": len(findings), "diffLines": diff_lines,
+    }
+
+
 def score(passed: int, total: int, findings: list[dict], diff_lines: int) -> int:
     pass_rate = (passed / total) if total else 0.0
     sev = min(1.0, sum(SEVERITY_WEIGHT.get(f.get("severity", "low"), 0.1) for f in findings))

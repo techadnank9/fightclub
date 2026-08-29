@@ -7,6 +7,7 @@ export class Hud {
   constructor() {
     this.card = $('#fightcard');
     this.harness = $('#harness');
+    this.scorecard = $('#scorecard');
     this.verdictEl = $('#verdict');
     this.sandboxes = new Map();
     $('#verdict-close').addEventListener('click', () => {
@@ -48,6 +49,13 @@ export class Hud {
         break;
       }
       case 'tests.result': {
+        if (ev.by === 'referee') {
+          this.scoreComp(ev.side, 'tests',
+            Math.round(600 * ev.passed / Math.max(1, ev.total)) / 10, 60,
+            `${ev.passed}/${ev.total}`);
+          this.logLine(`referee re-ran main's tests on [${ev.side}]: ${ev.passed}/${ev.total}`, 't-ref');
+          break;
+        }
         const f = this.fighter(ev.side);
         f.querySelector('.tests').textContent = `${ev.passed}/${ev.total} tests`;
         const fill = f.querySelector('.fill');
@@ -64,6 +72,7 @@ export class Hud {
       case 'referee.spawned': {
         this.sandbox(ev.sandbox, 'running');
         this.logLine('referee enters the arena', 't-ref');
+        this.scorecard.style.display = 'block';
         break;
       }
       case 'referee.finding': {
@@ -71,6 +80,7 @@ export class Hud {
         break;
       }
       case 'verdict': {
+        if (ev.breakdown) this.showBreakdown(ev.breakdown, ev.winner);
         this.setState(ev.winner, 'done', 'winner');
         const loser = ev.winner === 'a' ? 'b' : 'a';
         this.setState(loser, 'done', 'branch deleted');
@@ -87,6 +97,28 @@ export class Hud {
   }
 
   fighter(side) { return this.card.querySelector(`.fighter[data-side="${side}"]`); }
+
+  scoreComp(side, comp, value, cap, detail) {
+    const col = this.scorecard.querySelector(`.col[data-side="${side}"]`);
+    const row = col.querySelector(`.comp[data-c="${comp}"]`);
+    row.querySelector('.val').textContent = detail ? `${value} (${detail})` : `${value}`;
+    row.querySelector('.bar i').style.width = `${Math.max(0, Math.min(100, (value / cap) * 100))}%`;
+  }
+
+  showBreakdown(bd, winner) {
+    this.scorecard.style.display = 'block';
+    this.scorecard.querySelector('.pending').style.display = 'none';
+    for (const side of ['a', 'b']) {
+      const c = bd[side];
+      if (!c) continue;
+      this.scoreComp(side, 'tests', c.tests, 60, `${c.passed}/${c.total}`);
+      this.scoreComp(side, 'review', c.review, 25, `${c.findings} finding${c.findings === 1 ? '' : 's'}`);
+      this.scoreComp(side, 'economy', c.economy, 15, `${c.diffLines} lines`);
+      const col = this.scorecard.querySelector(`.col[data-side="${side}"]`);
+      col.querySelector('.total').textContent = Math.round(c.tests + c.review + c.economy);
+      col.classList.toggle('winner', side === winner);
+    }
+  }
 
   setState(side, state, text) {
     const f = this.fighter(side);
@@ -128,6 +160,16 @@ export class Hud {
 
   reset() {
     this.verdictEl.classList.remove('show');
+    this.scorecard.style.display = 'none';
+    this.scorecard.querySelector('.pending').style.display = 'block';
+    for (const col of this.scorecard.querySelectorAll('.col')) {
+      col.classList.remove('winner');
+      col.querySelector('.total').textContent = '—';
+      for (const row of col.querySelectorAll('.comp')) {
+        row.querySelector('.val').textContent = '—';
+        row.querySelector('.bar i').style.width = '0%';
+      }
+    }
     this.sandboxes.clear();
     document.querySelector('#sandboxes').innerHTML = '';
     document.querySelector('#eventlog').innerHTML = '';

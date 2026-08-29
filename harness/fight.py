@@ -48,22 +48,27 @@ def main() -> int:
     branches = {"a": f"fight/a-{fight_id}", "b": f"fight/b-{fight_id}"}
 
     def fighter(side: str, agent: str):
-        sb = Sandbox(session, side, args.target).create()
-        sb.checkout_branch(branches[side])
-        emitter.emit("fighter.started", side=side, agent=agent,
-                     sandbox=f"sb-{side}-{fight_id}", branch=branches[side])
-        result = run_fighter(side, agent, args.task, sb, emitter)
-        sb.push_branch()
-        return result
+        try:
+            sb = Sandbox(session, side, args.target).create()
+            sb.checkout_branch(branches[side])
+            emitter.emit("fighter.started", side=side, agent=agent,
+                         sandbox=f"sb-{side}-{fight_id}", branch=branches[side])
+            result = run_fighter(side, agent, args.task, sb, emitter)
+            sb.push_branch()
+            return result
+        except Exception as e:  # a crashing fighter forfeits, the fight goes on
+            print(f"fighter {side} crashed: {e!r}", file=sys.stderr)
+            emitter.emit("fighter.done", side=side)
+            return None
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         fa = pool.submit(fighter, "a", args.a)
         fb = pool.submit(fighter, "b", args.b)
-        fa.result()
-        fb.result()
+        results = {"a": fa.result(), "b": fb.result()}
 
     run_referee(session, args.task, args.target, branches, emitter,
-                open_pr=not args.no_pr)
+                open_pr=not args.no_pr,
+                forfeits={s for s, r in results.items() if r is None})
 
     time.sleep(0.2)
     emitter.emit("session.closed")

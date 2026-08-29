@@ -19,10 +19,16 @@ export function tickTweens(dt) {
     tw.t += dt;
     if (tw.t < 0) continue;
     const p = Math.min(1, tw.t / tw.dur);
-    tw.onUpdate(tw.ease(p));
-    if (p >= 1) {
+    try {
+      tw.onUpdate(tw.ease(p));
+      if (p >= 1) {
+        tweens.splice(i, 1);
+        tw.onDone?.();
+      }
+    } catch (err) {
+      // A throwing tween is dropped, never allowed to freeze the engine
       tweens.splice(i, 1);
-      tw.onDone?.();
+      console.warn('tween dropped:', err);
     }
   }
 }
@@ -154,8 +160,9 @@ export class FightArena {
         this.cb.shake?.(0.25);
         this.dust(s.x, 0.4, 0, s.color, 10);
         if (s.scaffold) {
+          const sc = s.scaffold;
           const top = 0.3 + (idx + 1) * TOWER.floorHeight;
-          tween({ dur: 0.5, onUpdate: (p) => { s.scaffold.position.y = s.scaffold.position.y + (top - s.scaffold.position.y) * p; } });
+          tween({ dur: 0.5, onUpdate: (p) => { if (sc.parent) sc.position.y += (top - sc.position.y) * p; } });
         }
         if (s.crane) {
           const jib = s.crane.userData.jib;
@@ -211,6 +218,20 @@ export class FightArena {
     this.group.add(ref.group);
     this.referee = ref;
     ref.walkTo(new THREE.Vector3(0, 0, 6), () => ref.setState('idle'));
+  }
+
+  // referee re-runs main's tests on one side: walk over and judge
+  refereeInspect(side, ok) {
+    const s = this.sides[side];
+    if (!s) return;
+    this.testResult(side, ok);
+    if (this.referee) {
+      const ref = this.referee;
+      ref.walkTo(new THREE.Vector3(s.x + (side === 'a' ? 4.5 : -4.5), 0, 3.5), () => {
+        ref.setState('idle');
+        ref.group.lookAt(this.group?.position.x ?? 0 + s.x, 1.5, this.group?.position.z ?? 0);
+      });
+    }
   }
 
   // referee.finding — flash the offending side

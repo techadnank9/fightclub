@@ -68,12 +68,33 @@ export function startMockFight({ repo, task, a, b }) {
       severity: pick(['low', 'medium', 'high']), msg: pick(msgs),
     });
   }
+  // Referee re-runs the ORIGINAL suite on each branch (by: 'referee')
+  const refRuns = {};
+  for (const side of ['a', 'b']) {
+    rt += 1200 + rint(900);
+    const total = totals[side];
+    const passed = Math.max(0, total - rint(3));
+    refRuns[side] = { passed, total };
+    qAt(q, rt, { type: 'tests.result', side, ok: passed === total, passed, total, by: 'referee' });
+  }
   rt += 2000;
-  const winner = Math.random() < 0.5 ? 'a' : 'b';
-  const ws = 70 + rint(25), ls = 40 + rint(25);
+  const bd = {};
+  for (const side of ['a', 'b']) {
+    const { passed, total } = refRuns[side];
+    const findings = 1 + rint(2), diffLines = 20 + rint(120);
+    bd[side] = {
+      tests: Math.round(600 * passed / total) / 10,
+      review: Math.round(250 * (1 - findings * 0.2)) / 10,
+      economy: diffLines <= 40 ? 15 : Math.round(150 * (1 - (diffLines - 40) / 360)) / 10,
+      passed, total, findings, diffLines,
+    };
+  }
+  const scoreOf = (x) => Math.round(bd[x].tests + bd[x].review + bd[x].economy);
+  const winner = scoreOf('a') >= scoreOf('b') ? 'a' : 'b';
   qAt(q, rt, {
     type: 'verdict', winner,
-    score: { a: winner === 'a' ? ws : ls, b: winner === 'b' ? ws : ls },
+    score: { a: scoreOf('a'), b: scoreOf('b') },
+    breakdown: bd,
     pr: 4000 + rint(999),
     deleted: `fight/${winner === 'a' ? 'b' : 'a'}-${session.slice(6)}`,
   });

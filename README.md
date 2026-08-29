@@ -53,6 +53,91 @@ The frontend never contains fight logic — it is a pure renderer of a 10-event
 JSONL contract. That means every fight is **replayable**: scrub the timeline
 at the bottom and watch any moment again (the "4D" feature).
 
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Browser["🌆 Browser — pure renderer"]
+        UI[Three.js city\ntowers · characters · cranes]
+        HUD[HUD\nfight card · harness panel\nreferee scorecard]
+        RP[Replay scrubber]
+        BUS[event bus\nwindow.FightCity.dispatch]
+        BUS --> UI & HUD & RP
+    end
+
+    subgraph Server["FastAPI — dumb pipe"]
+        F[POST /fight]
+        E[GET /events SSE]
+        R[GET /repos]
+    end
+
+    subgraph Harness["⚔️ Fight harness"]
+        O[fight.py orchestrator]
+        A[fighter A\nsandbox + branch]
+        B[fighter B\nsandbox + branch]
+        REF[referee\nclean sandbox]
+        SC[scoring.py\n60/25/15]
+    end
+
+    subgraph External
+        TFY[TrueFoundry\nAI gateway]
+        OAI[OpenAI]
+        GH[GitHub\nthrowaway arena repo]
+        QD[Qodo\nPR review]
+        BD[Bright Data\nGitHub scrape]
+    end
+
+    UI -- click building --> F
+    F -- spawn --> O
+    O --> A & B --> REF --> SC
+    O -- JSONL stdout --> E -- SSE --> BUS
+    A & REF <--> TFY
+    B <--> OAI
+    A & B -- push branches --> GH
+    REF -- open winner PR\ndelete loser branch --> GH
+    GH --> QD
+    BD -- repos.json --> R --> UI
+```
+
+### How one fight flows
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant W as City (browser)
+    participant S as Server
+    participant H as Harness
+    participant G as GitHub
+
+    U->>W: click building, pick issue + 2 agents
+    W->>S: POST /fight
+    S->>H: spawn fight.py subprocess
+    W->>S: EventSource /events
+    H-->>W: fighter.started ×2 (walk in, hard hats on)
+    loop each fighter, in parallel sandboxes
+        H-->>W: tool.called (bubble over builder)
+        H-->>W: commit.pushed (floor drops, squash & stretch)
+        H-->>W: tests.result (windows pulse green/red)
+    end
+    H-->>W: fighter.done ×2
+    H-->>W: referee.spawned (walks into arena)
+    H-->>W: tests.result by=referee (re-runs MAIN's suite)
+    H-->>W: referee.finding ×N (scorecard fills)
+    H->>G: open winner PR, delete loser branch
+    H-->>W: verdict + score breakdown
+    Note over W: crane lowers crown · loser tower collapses ·<br/>winner floors fly onto the repo building
+```
+
+### How the referee decides
+
+Shown live in the in-app **Referee's Scorecard** while it works:
+
+| Component | Weight | Measured by |
+|---|---|---|
+| Original tests | 60% | MAIN's own suite re-run on each branch in a clean sandbox — editing tests in your branch does nothing |
+| Code review | 25% | Findings on the diff (high −50%, medium −25%, low −10% of this component) |
+| Diff economy | 15% | ≤40 changed lines = full marks, ≥400 = zero |
+
 ## The stack
 
 | Piece | What it does |

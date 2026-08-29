@@ -55,10 +55,21 @@
   #tip .meta { color: var(--ink-dim); margin-top: 2px; }
 
   /* ── Fight setup dialog ──────────────────── */
+  #setup-backdrop {
+    position: fixed; inset: 0; z-index: 29; display: none;
+    background: rgba(4, 6, 12, 0.35);
+  }
   #setup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
     width: 420px; padding: 20px; z-index: 30; display: none;
   }
+  .modal-close {
+    position: absolute; top: 8px; right: 8px; width: 26px; height: 26px;
+    background: transparent; border: 1px solid var(--panel-border);
+    border-radius: 6px; color: var(--ink-dim); font-family: inherit;
+    font-size: 13px; line-height: 1; cursor: pointer;
+  }
+  .modal-close:hover { color: var(--ink); background: rgba(255,255,255,0.06); }
   #setup h2 { font-size: 15px; letter-spacing: 1px; margin-bottom: 4px; }
   #setup .repo-name { color: var(--good); }
   #setup label { display: block; font-size: 11px; color: var(--ink-dim); margin: 12px 0 4px; letter-spacing: 1px; }
@@ -115,6 +126,30 @@
   #eventlog .t-a { color: var(--a); } #eventlog .t-b { color: var(--b); }
   #eventlog .t-ref { color: var(--ref); }
 
+  /* ── Referee scorecard ───────────────────── */
+  #scorecard {
+    position: fixed; right: 12px; bottom: 12px; width: 300px; z-index: 12;
+    padding: 12px; display: none; font-size: 11px;
+  }
+  #scorecard h3 { font-size: 11px; letter-spacing: 1px; color: var(--ref); margin-bottom: 2px; }
+  #scorecard .how { color: var(--ink-dim); margin-bottom: 8px; }
+  #scorecard .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  #scorecard .col h4 { font-size: 11px; margin-bottom: 6px; }
+  #scorecard .col[data-side="a"] h4 { color: var(--a); }
+  #scorecard .col[data-side="b"] h4 { color: var(--b); }
+  #scorecard .comp { margin-bottom: 6px; }
+  #scorecard .comp .lbl { display: flex; justify-content: space-between; color: var(--ink-dim); }
+  #scorecard .comp .lbl .val { color: var(--ink); }
+  #scorecard .bar { height: 5px; background: #1a2340; border-radius: 3px; margin-top: 3px; overflow: hidden; }
+  #scorecard .bar i { display: block; height: 100%; width: 0%; border-radius: 3px;
+    background: var(--ref); transition: width .8s cubic-bezier(.2,.8,.3,1); }
+  #scorecard .col[data-side="a"] .bar i { background: var(--a); }
+  #scorecard .col[data-side="b"] .bar i { background: var(--b); }
+  #scorecard .totalrow { display: flex; justify-content: space-between; margin-top: 4px;
+    padding-top: 6px; border-top: 1px solid var(--panel-border); font-weight: bold; }
+  #scorecard .col.winner .totalrow { color: var(--good); }
+  #scorecard .pending { color: var(--ink-dim); font-style: italic; }
+
   /* ── Verdict overlay ─────────────────────── */
   #verdict {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(.8);
@@ -156,7 +191,10 @@
 
 <div id="tip" class="panel"></div>
 
+<div id="setup-backdrop"></div>
+
 <div id="setup" class="panel">
+  <button class="modal-close" id="setup-close" title="close">✕</button>
   <h2>FIGHT AT <span class="repo-name"></span></h2>
   <label>TASK — pick an open issue or write your own</label>
   <select id="issue-select"></select>
@@ -204,6 +242,28 @@
   <h3>HARNESS</h3>
   <div id="sandboxes"></div>
   <div id="eventlog"></div>
+</div>
+
+<div id="scorecard" class="panel">
+  <h3>REFEREE'S SCORECARD</h3>
+  <div class="how">60% original tests &middot; 25% code review &middot; 15% diff size</div>
+  <div class="cols">
+    <div class="col" data-side="a">
+      <h4>A</h4>
+      <div class="comp" data-c="tests"><div class="lbl"><span>tests /60</span><span class="val">—</span></div><div class="bar"><i></i></div></div>
+      <div class="comp" data-c="review"><div class="lbl"><span>review /25</span><span class="val">—</span></div><div class="bar"><i></i></div></div>
+      <div class="comp" data-c="economy"><div class="lbl"><span>diff /15</span><span class="val">—</span></div><div class="bar"><i></i></div></div>
+      <div class="totalrow"><span>total</span><span class="total">—</span></div>
+    </div>
+    <div class="col" data-side="b">
+      <h4>B</h4>
+      <div class="comp" data-c="tests"><div class="lbl"><span>tests /60</span><span class="val">—</span></div><div class="bar"><i></i></div></div>
+      <div class="comp" data-c="review"><div class="lbl"><span>review /25</span><span class="val">—</span></div><div class="bar"><i></i></div></div>
+      <div class="comp" data-c="economy"><div class="lbl"><span>diff /15</span><span class="val">—</span></div><div class="bar"><i></i></div></div>
+      <div class="totalrow"><span>total</span><span class="total">—</span></div>
+    </div>
+  </div>
+  <div class="pending">re-running main's original tests…</div>
 </div>
 
 <div id="verdict" class="panel">

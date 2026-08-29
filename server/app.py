@@ -62,9 +62,12 @@ def _env() -> dict:
 
 
 async def _pump_subprocess(session: Session, cmd: list[str]) -> None:
+    err_path = ROOT / ".fights" / f"{session.id}.stderr"
+    err_path.parent.mkdir(exist_ok=True)
+    err_file = open(err_path, "wb")
     proc = await asyncio.create_subprocess_exec(
         *cmd, cwd=ROOT,
-        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        stdout=asyncio.subprocess.PIPE, stderr=err_file)
     assert proc.stdout
     async for raw in proc.stdout:
         line = raw.decode(errors="replace").strip()
@@ -76,6 +79,7 @@ async def _pump_subprocess(session: Session, cmd: list[str]) -> None:
             continue
         session.publish(event)
     await proc.wait()
+    err_file.close()
     if not session.done:
         # Harness died without closing: tell the frontend anyway.
         session.publish({"type": "session.closed"})
@@ -158,6 +162,22 @@ async def events(session: str):
 
     return StreamingResponse(stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache"})
+
+
+@app.post("/screenshot")
+async def screenshot(request: Request):
+    """Dev helper: the page POSTs its canvas as a data URL; saved for README."""
+    import base64
+    name = request.query_params.get("name", "shot")
+    if not name.replace("-", "").replace("_", "").isalnum():
+        raise HTTPException(400, "bad name")
+    data = (await request.body()).decode()
+    if "," in data:
+        data = data.split(",", 1)[1]
+    out = ROOT / "docs" / "screenshots" / f"{name}.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(base64.b64decode(data))
+    return {"saved": str(out.relative_to(ROOT))}
 
 
 @app.get("/repos")

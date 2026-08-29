@@ -20,7 +20,7 @@ from pathlib import Path
 
 from .llm import chat
 from .tools import run_pytest
-from .scoring import score, formula_text
+from .scoring import score, formula_text, components
 from .events import EventEmitter
 from .sandbox import Sandbox, _run
 
@@ -87,14 +87,25 @@ def _review_findings(task: str, diff: str) -> list[dict]:
 
 def run_referee(session: str, task: str, target_repo: str,
                 branches: dict, emitter: EventEmitter,
-                open_pr: bool = True) -> dict:
+                open_pr: bool = True, forfeits: set | None = None) -> dict:
     ref = Sandbox(session, "ref", target_repo).create()
     emitter.emit("referee.spawned", sandbox=f"sb-ref-{session.split('-')[-1]}")
+    forfeits = forfeits or set()
 
     original_tests = _original_tests_from_main(ref)
     results = {}
     for side in ("a", "b"):
+        if side in forfeits:
+            emitter.emit("referee.finding", side=side, severity="high",
+                         msg="fighter crashed mid-fight: forfeit")
+            results[side] = {"tests": {"ok": False, "passed": 0, "total": 1},
+                             "diff_lines": 0, "findings": [{"severity": "high", "msg": "forfeit"}],
+                             "score": 0}
+            continue
         judged = _judge_branch(ref, branches[side], original_tests)
+        t = judged["tests"]
+        emitter.emit("tests.result", side=side, ok=t["ok"], passed=t["passed"],
+                     total=t["total"], by="referee")
         findings = _review_findings(task, judged["diff"])
         for f in findings:
             emitter.emit("referee.finding", side=side,
@@ -111,8 +122,14 @@ def run_referee(session: str, task: str, target_repo: str,
     if open_pr:
         pr_number = _open_pr_and_cleanup(ref, task, branches, winner, loser, results)
 
+    breakdown = {}
+    for side in ("a", "b"):
+        r = results[side]
+        breakdown[side] = components(r["tests"]["passed"], r["tests"]["total"],
+                                     r["findings"], r["diff_lines"])
     emitter.emit("verdict", winner=winner,
                  score={"a": results["a"]["score"], "b": results["b"]["score"]},
+                 breakdown=breakdown,
                  pr=pr_number, deleted=branches[loser])
     return {"winner": winner, "results": results, "pr": pr_number}
 
