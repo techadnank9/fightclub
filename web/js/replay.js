@@ -48,16 +48,19 @@ export class Replay {
       dispatch(this.saved[i], { record: false });
     }
     this.isReplaying = false;
+    this.range.value = idx;   // keep the handle in step with what is shown
     this.label.textContent = `event ${idx + 1}/${this.saved.length} — ${this.saved[idx]?.type ?? ''}`;
   }
 
   togglePlay() {
     if (this.playing) { this.stop(); return; }
     if (!this.saved?.length) return;
-    this.playing = true;
-    this.playBtn.textContent = '⏸';
+    // Rewind FIRST: scrubTo() calls stop(), so arming playback before it would
+    // immediately clear this.playing and the first step() would bail.
     let i = +this.range.value >= this.saved.length - 1 ? 0 : +this.range.value;
     this.scrubTo(i);
+    this.playing = true;
+    this.playBtn.textContent = '⏸';
     // Real-time playback honoring original spacing (capped)
     const step = () => {
       if (!this.playing) return;

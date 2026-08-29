@@ -13,3 +13,5 @@ What broke and what we changed, one line each, newest last.
 - Frontend POSTs /fight before opening the EventSource, so the SSE stream replays session history first or the browser misses session.opened.
 - Referee crashed post-fight: bare `git fetch origin <branch>` on a shallow clone never creates origin/<branch>, only FETCH_HEAD; fetch with an explicit refspec.
 - Fighters committed __pycache__ and the referee docked them for it; commit_all now excludes bytecode.
+- Replay ▶ button was dead: `togglePlay()` set `playing = true` before calling `scrubTo()`, whose first statement is `stop()` — playback rewound to event 1 and froze. Rewind before arming.
+- Replay `scrubTo()` updated the label but not `range.value`, so the slider handle sat at the end while the label read "event 1/N".
