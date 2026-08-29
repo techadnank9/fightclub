@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agent Fight City</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --panel: rgba(13, 18, 34, 0.88);
+    --panel-border: #2a3558;
+    --ink: #dfe6ff;
+    --ink-dim: #8b96c2;
+    --a: #ffb347;   /* fighter A accent */
+    --b: #7ec8ff;   /* fighter B accent */
+    --good: #6fe3a1;
+    --bad: #ff6b81;
+    --ref: #c9a5ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); }
+  body { font-family: "Courier New", ui-monospace, monospace; color: var(--ink); }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  }
+
+  /* ── Top bar ─────────────────────────────── */
+  #topbar {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    padding: 8px 18px; display: flex; align-items: center; gap: 14px;
+    z-index: 10; pointer-events: none;
+  }
+  #topbar .title { font-weight: bold; letter-spacing: 2px; font-size: 14px; }
+  #topbar .sub { color: var(--ink-dim); font-size: 11px; }
+
+  /* ── Building tooltip ────────────────────── */
+  #tip {
+    position: fixed; padding: 8px 12px; font-size: 12px; z-index: 20;
+    pointer-events: none; display: none; max-width: 260px;
+  }
+  #tip .name { font-weight: bold; }
+  #tip .meta { color: var(--ink-dim); margin-top: 2px; }
+
+  /* ── Fight setup dialog ──────────────────── */
+  #setup {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 420px; padding: 20px; z-index: 30; display: none;
+  }
+  #setup h2 { font-size: 15px; letter-spacing: 1px; margin-bottom: 4px; }
+  #setup .repo-name { color: var(--good); }
+  #setup label { display: block; font-size: 11px; color: var(--ink-dim); margin: 12px 0 4px; letter-spacing: 1px; }
+  #setup select, #setup input, #setup textarea {
+    width: 100%; background: #0a0f22; color: var(--ink);
+    border: 1px solid var(--panel-border); border-radius: 6px;
+    padding: 8px; font-family: inherit; font-size: 12px;
+  }
+  #setup textarea { resize: vertical; min-height: 54px; }
+  #setup .row { display: flex; gap: 10px; }
+  #setup .row > div { flex: 1; }
+  #setup .btns { display: flex; gap: 10px; margin-top: 16px; }
+  button.primary, button.ghost {
+    flex: 1; padding: 10px; border-radius: 6px; font-family: inherit;
+    font-size: 12px; letter-spacing: 1px; cursor: pointer; border: 1px solid var(--panel-border);
+  }
+  button.primary { background: #26437a; color: #fff; border-color: #3f6db5; }
+  button.primary:hover { background: #2f549c; }
+  button.ghost { background: transparent; color: var(--ink-dim); }
+  button.ghost:hover { color: var(--ink); }
+
+  /* ── Fight card (left) ───────────────────── */
+  #fightcard {
+    position: fixed; left: 12px; top: 60px; width: 250px; z-index: 10;
+    padding: 12px; display: none; font-size: 12px;
+  }
+  #fightcard .task { color: var(--ink-dim); font-size: 11px; margin-bottom: 10px; line-height: 1.4; }
+  .fighter { border-top: 1px solid var(--panel-border); padding: 8px 0; }
+  .fighter .head { display: flex; justify-content: space-between; font-weight: bold; }
+  .fighter[data-side="a"] .head .nm { color: var(--a); }
+  .fighter[data-side="b"] .head .nm { color: var(--b); }
+  .fighter .status { color: var(--ink-dim); font-size: 11px; margin-top: 4px; min-height: 14px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fighter .stats { display: flex; gap: 10px; margin-top: 6px; font-size: 11px; color: var(--ink-dim); }
+  .testbar { height: 6px; background: #1a2340; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .testbar .fill { height: 100%; width: 0%; background: var(--good); transition: width .4s; }
+  .testbar .fill.fail { background: var(--bad); }
+  .state-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#555; margin-right:5px; }
+  .state-dot.working { background: var(--good); animation: pulse 1s infinite; }
+  .state-dot.waiting { background: var(--a); animation: pulse 1s infinite; }
+  .state-dot.done { background: #888; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  /* ── Harness panel (right) ───────────────── */
+  #harness {
+    position: fixed; right: 12px; top: 60px; width: 230px; z-index: 10;
+    padding: 12px; display: none; font-size: 11px;
+  }
+  #harness h3 { font-size: 11px; letter-spacing: 1px; color: var(--ink-dim); margin-bottom: 8px; }
+  .sbx { display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px solid var(--panel-border); }
+  .sbx .id { color: var(--ink-dim); }
+  #eventlog { margin-top: 10px; max-height: 180px; overflow-y: auto; color: var(--ink-dim); }
+  #eventlog div { padding: 2px 0; border-top: 1px dotted #1e2846; }
+  #eventlog .t-a { color: var(--a); } #eventlog .t-b { color: var(--b); }
+  #eventlog .t-ref { color: var(--ref); }
+
+  /* ── Verdict overlay ─────────────────────── */
+  #verdict {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(.8);
+    padding: 26px 40px; z-index: 40; display: none; text-align: center;
+    opacity: 0; transition: all .5s cubic-bezier(.2,1.4,.4,1);
+  }
+  #verdict.show { display: block; opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  #verdict .winner { font-size: 22px; font-weight: bold; letter-spacing: 2px; }
+  #verdict .score { font-size: 14px; color: var(--ink-dim); margin-top: 8px; }
+  #verdict .pr { margin-top: 10px; font-size: 12px; color: var(--good); }
+  #verdict .deleted { font-size: 11px; color: var(--bad); margin-top: 4px; }
+  #verdict button { margin-top: 16px; }
+
+  /* ── Replay scrubber ─────────────────────── */
+  #replaybar {
+    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+    width: min(640px, 90vw); padding: 10px 14px; z-index: 10; display: none;
+    align-items: center; gap: 10px;
+  }
+  #replaybar input[type=range] { flex: 1; accent-color: var(--a); }
+  #replaybar .rlab { font-size: 11px; color: var(--ink-dim); white-space: nowrap; }
+  #replaybar button { flex: 0 0 auto; width: 34px; padding: 6px; }
+
+  /* ── Hint ────────────────────────────────── */
+  #hint {
+    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+    padding: 8px 16px; font-size: 12px; color: var(--ink-dim); z-index: 5;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="topbar" class="panel">
+  <span class="title">AGENT FIGHT CITY</span>
+  <span class="sub">click a building to start a fight</span>
+</div>
+
+<div id="tip" class="panel"></div>
+
+<div id="setup" class="panel">
+  <h2>FIGHT AT <span class="repo-name"></span></h2>
+  <label>TASK — pick an open issue or write your own</label>
+  <select id="issue-select"></select>
+  <textarea id="task-text" placeholder="...or describe the task"></textarea>
+  <div class="row">
+    <div>
+      <label>FIGHTER A</label>
+      <select id="agent-a">
+        <option value="sonnet">Claude Sonnet</option>
+        <option value="opus">Claude Opus</option>
+        <option value="haiku">Claude Haiku</option>
+      </select>
+    </div>
+    <div>
+      <label>FIGHTER B</label>
+      <select id="agent-b">
+        <option value="gpt">GPT</option>
+        <option value="gpt-mini">GPT Mini</option>
+      </select>
+    </div>
+  </div>
+  <div class="btns">
+    <button class="ghost" id="setup-cancel">CANCEL</button>
+    <button class="primary" id="setup-start">START FIGHT</button>
+  </div>
+</div>
+
+<div id="fightcard" class="panel">
+  <div class="task"></div>
+  <div class="fighter" data-side="a">
+    <div class="head"><span class="nm">—</span><span class="state"><span class="state-dot"></span><span class="state-txt">idle</span></span></div>
+    <div class="status"></div>
+    <div class="stats"><span class="commits">0 commits</span><span class="tests">— tests</span></div>
+    <div class="testbar"><div class="fill"></div></div>
+  </div>
+  <div class="fighter" data-side="b">
+    <div class="head"><span class="nm">—</span><span class="state"><span class="state-dot"></span><span class="state-txt">idle</span></span></div>
+    <div class="status"></div>
+    <div class="stats"><span class="commits">0 commits</span><span class="tests">— tests</span></div>
+    <div class="testbar"><div class="fill"></div></div>
+  </div>
+</div>
+
+<div id="harness" class="panel">
+  <h3>HARNESS</h3>
+  <div id="sandboxes"></div>
+  <div id="eventlog"></div>
+</div>
+
+<div id="verdict" class="panel">
+  <div class="winner"></div>
+  <div class="score"></div>
+  <div class="pr"></div>
+  <div class="deleted"></div>
+  <button class="primary" id="verdict-close">BACK TO CITY</button>
+</div>
+
+<div id="replaybar" class="panel">
+  <button class="ghost" id="replay-play">▶</button>
+  <input type="range" id="replay-range" min="0" max="100" value="0" />
+  <span class="rlab" id="replay-label">replay</span>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>

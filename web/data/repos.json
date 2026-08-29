@@ -1,0 +1,61 @@
+{
+  "generated_at": "2026-08-29T00:00:00Z",
+  "source": "seed (replaced by city/scrape.py output, same schema)",
+  "repos": [
+    { "full_name": "vercel/next.js", "language": "TypeScript", "stars": 128000, "commits": 26400, "open_issues": [
+      { "number": 4821, "title": "Middleware rewrite loses query params" },
+      { "number": 4795, "title": "Image component blurs on slow 3G" },
+      { "number": 4710, "title": "App router 404 flash on client nav" } ] },
+    { "full_name": "facebook/react", "language": "JavaScript", "stars": 231000, "commits": 19800, "open_issues": [
+      { "number": 8812, "title": "useEffect cleanup runs twice in strict mode docs unclear" },
+      { "number": 8790, "title": "Suspense fallback flicker under concurrent input" } ] },
+    { "full_name": "rust-lang/rust", "language": "Rust", "stars": 99000, "commits": 250000, "open_issues": [
+      { "number": 1201, "title": "Borrow checker error message points at wrong span" },
+      { "number": 1188, "title": "ICE on recursive const generic default" } ] },
+    { "full_name": "python/cpython", "language": "Python", "stars": 64000, "commits": 122000, "open_issues": [
+      { "number": 3301, "title": "asyncio subprocess deadlock on macOS" },
+      { "number": 3288, "title": "pathlib.glob slow on deep trees" } ] },
+    { "full_name": "torvalds/linux", "language": "C", "stars": 182000, "commits": 1300000, "open_issues": [
+      { "number": 42, "title": "Documentation typo in scheduler notes" } ] },
+    { "full_name": "golang/go", "language": "Go", "stars": 125000, "commits": 62000, "open_issues": [
+      { "number": 5510, "title": "net/http timeout ignored when body streamed" },
+      { "number": 5495, "title": "gofmt disagrees with itself on generic constraints" } ] },
+    { "full_name": "microsoft/vscode", "language": "TypeScript", "stars": 165000, "commits": 131000, "open_issues": [
+      { "number": 9901, "title": "Terminal scrollback lost on reconnect" },
+      { "number": 9877, "title": "Minimap ghosting with high dpi + zoom" } ] },
+    { "full_name": "sveltejs/svelte", "language": "TypeScript", "stars": 80000, "commits": 9800, "open_issues": [
+      { "number": 2210, "title": "Transition callback fires before intro completes" } ] },
+    { "full_name": "denoland/deno", "language": "Rust", "stars": 97000, "commits": 12400, "open_issues": [
+      { "number": 3130, "title": "fetch keepalive leaks socket on abort" } ] },
+    { "full_name": "pytorch/pytorch", "language": "Python", "stars": 84000, "commits": 74000, "open_issues": [
+      { "number": 6120, "title": "DataLoader worker hang on KeyboardInterrupt" } ] },
+    { "full_name": "tailwindlabs/tailwindcss", "language": "TypeScript", "stars": 84000, "commits": 6900, "open_issues": [
+      { "number": 1515, "title": "JIT purge misses class in template literal" } ] },
+    { "full_name": "nodejs/node", "language": "JavaScript", "stars": 108000, "commits": 42000, "open_issues": [
+      { "number": 7208, "title": "fs.watch duplicate events on network drive" } ] },
+    { "full_name": "kubernetes/kubernetes", "language": "Go", "stars": 112000, "commits": 118000, "open_issues": [
+      { "number": 8804, "title": "HPA flaps when metrics server restarts" } ] },
+    { "full_name": "rails/rails", "language": "Ruby", "stars": 56000, "commits": 91000, "open_issues": [
+      { "number": 4402, "title": "ActiveRecord preload breaks with composite pk" } ] },
+    { "full_name": "django/django", "language": "Python", "stars": 80000, "commits": 33000, "open_issues": [
+      { "number": 3390, "title": "Admin inline formset loses order on validation error" } ] },
+    { "full_name": "flutter/flutter", "language": "Dart", "stars": 167000, "commits": 41000, "open_issues": [
+      { "number": 7719, "title": "Hero animation jank when keyboard opens" } ] },
+    { "full_name": "ziglang/zig", "language": "Zig", "stars": 35000, "commits": 26000, "open_issues": [
+      { "number": 990, "title": "comptime branch quota error unclear" } ] },
+    { "full_name": "BurntSushi/ripgrep", "language": "Rust", "stars": 49000, "commits": 3600, "open_issues": [
+      { "number": 610, "title": "gitignore negation with trailing slash mismatch" } ] },
+    { "full_name": "expressjs/express", "language": "JavaScript", "stars": 66000, "commits": 5900, "open_issues": [
+      { "number": 1180, "title": "Route param decoding inconsistent with query" } ] },
+    { "full_name": "vitejs/vite", "language": "TypeScript", "stars": 70000, "commits": 8100, "open_issues": [
+      { "number": 2077, "title": "HMR full reload on css module rename" } ] },
+    { "full_name": "postgres/postgres", "language": "C", "stars": 17000, "commits": 59000, "open_issues": [
+      { "number": 88, "title": "Docs: vacuum freeze example outdated" } ] },
+    { "full_name": "redis/redis", "language": "C", "stars": 68000, "commits": 12800, "open_issues": [
+      { "number": 1440, "title": "CLUSTER SLOTS latency spike during resharding" } ] },
+    { "full_name": "ollama/ollama", "language": "Go", "stars": 95000, "commits": 4200, "open_issues": [
+      { "number": 3021, "title": "Model unload race when two pulls overlap" } ] },
+    { "full_name": "ggerganov/llama.cpp", "language": "C++", "stars": 70000, "commits": 5300, "open_issues": [
+      { "number": 4470, "title": "Metal backend NaN on long context" } ] }
+  ]
+}
