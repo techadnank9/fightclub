@@ -42,8 +42,11 @@ class Sandbox:
         """Stage everything and commit. Returns short sha, or None if nothing changed."""
         # Never stage bytecode: the referee (rightly) flags .pyc commits
         _run(["git", "add", "-A", "--", ".", ":!*__pycache__*", ":!*.pyc"], cwd=self.path)
-        st = _run(["git", "status", "--porcelain"], cwd=self.path)
-        if not st.stdout.strip():
+        # Commit only when something is actually STAGED — untracked bytecode
+        # shows in `status` but stages nothing, and `git commit` then exits 1
+        # (this forfeited both fighters once; see BLOG.md).
+        staged = _run(["git", "diff", "--cached", "--quiet"], cwd=self.path, check=False)
+        if staged.returncode == 0:
             return None
         _run(["git", "-c", "user.email=fighter@fight.city", "-c", "user.name=Fighter " + self.name,
               "commit", "-m", message], cwd=self.path)
