@@ -16,6 +16,22 @@ export class City {
     this.grid = CITY.blockSize;
     this.raycaster = new THREE.Raycaster();
     this.hovered = null;
+    this.lampBits = [];   // streetlight heads + glow sprites
+    this.stars = null;
+  }
+
+  // Day/night: dial window emissive, lamps, stars. Called by the theme toggle.
+  setDay(isDay) {
+    this.group.traverse((o) => {
+      if (!o.isMesh) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        if (m.emissiveMap) m.emissiveIntensity = isDay ? 0.12 : 0.8;
+      }
+    });
+    for (const bit of this.lampBits) bit.visible = !isDay;
+    if (this.stars) this.stars.visible = !isDay;
+    if (this.apron) this.apron.material.color.setHex(isDay ? 0x76889c : 0x070a12);
   }
 
   build(repos) {
@@ -42,6 +58,7 @@ export class City {
     apron.rotation.x = -Math.PI / 2;
     apron.position.y = -0.05;
     this.group.add(apron);
+    this.apron = apron;
 
     // Shuffle lot order deterministically so big repos spread out
     const lots = [];
@@ -99,6 +116,7 @@ export class City {
         glow.scale.set(6, 6, 1);
         glow.position.copy(head.position);
         this.group.add(pole, head, glow);
+        this.lampBits.push(head, glow);
       }
     }
   }
@@ -121,6 +139,7 @@ export class City {
       color: 0xbcd0ff, size: 1.4, sizeAttenuation: false, transparent: true, opacity: 0.8,
     }));
     this.group.add(stars);
+    this.stars = stars;
   }
 
   // Nearest free lot to a building — the fight arena site.
@@ -166,7 +185,7 @@ function setEmissiveBoost(group, v) {
     if (o.isMesh) {
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       for (const m of mats) {
-        if (m.emissiveMap) m.emissiveIntensity = 1.15 * v;
+        if (m.emissiveMap) m.emissiveIntensity = 0.8 * v;
       }
     }
   });

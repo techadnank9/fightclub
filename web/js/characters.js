@@ -12,11 +12,11 @@ export class Character {
     this.state = 'idle';        // idle | walk | work | cheer
     this.t = Math.random() * 10;
     this.walkTarget = null;
-    this.walkSpeed = 3.2;
+    this.walkSpeed = 5.5;
     this.onArrive = null;
 
-    const body = new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
-    const skin = new THREE.MeshStandardMaterial({ color: SKIN, roughness: 0.9 });
+    const body = new THREE.MeshStandardMaterial({ color, roughness: 0.8, emissive: color, emissiveIntensity: 0.35 });
+    const skin = new THREE.MeshStandardMaterial({ color: SKIN, roughness: 0.9, emissive: SKIN, emissiveIntensity: 0.18 });
     const dark = new THREE.MeshStandardMaterial({ color: 0x1a1e2c, roughness: 0.9 });
 
     // Torso
@@ -67,7 +67,7 @@ export class Character {
       badge.position.set(0, 0.05, 0.21);
       this.torso.add(badge);
     }
-    this.group.scale.setScalar(0.9);
+    this.group.scale.setScalar(2.0);
   }
 
   setState(s) {

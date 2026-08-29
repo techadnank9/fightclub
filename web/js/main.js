@@ -22,6 +22,8 @@ const app = document.querySelector('#app');
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
 renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -33,12 +35,13 @@ camera.position.set(80, 60, 80);
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.6, 0.82);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.55, 0.85);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
 // ── Lights: cold moonlight + faint ambient ─────────────────────
-scene.add(new THREE.AmbientLight(0x33406a, 0.55));
+const ambient = new THREE.AmbientLight(0x33406a, 0.55);
+scene.add(ambient);
 const moon = new THREE.DirectionalLight(0x8fa8ff, 0.5);
 moon.position.set(-60, 100, -40);
 scene.add(moon);
@@ -54,6 +57,40 @@ const replay = new Replay();
 const arena = new FightArena(scene, {
   shake: (amt) => rig.shake(amt),
   onPhase: () => {},
+});
+
+// ── Day / night theme ──────────────────────────────────────────
+const THEMES = {
+  night: {
+    bg: 0x0a0e1a, fogNear: CITY.fogNear, fogFar: CITY.fogFar,
+    ambient: [0x55628f, 1.0], key: [0x9db4ff, 0.75], fill: [0xffc98a, 0.2],
+    bloom: 0.42, icon: '☀',
+  },
+  day: {
+    bg: 0xa8c4e0, fogNear: 180, fogFar: 700,
+    ambient: [0xdfe8ff, 1.05], key: [0xfff2d9, 1.7], fill: [0xbcd4ff, 0.35],
+    bloom: 0.1, icon: '🌙',
+  },
+};
+let isDay = false;
+
+function applyTheme() {
+  const t = THEMES[isDay ? 'day' : 'night'];
+  scene.background.setHex(t.bg);
+  scene.fog.color.setHex(t.bg);
+  scene.fog.near = t.fogNear;
+  scene.fog.far = t.fogFar;
+  ambient.color.setHex(t.ambient[0]); ambient.intensity = t.ambient[1];
+  moon.color.setHex(t.key[0]); moon.intensity = t.key[1];
+  warmFill.color.setHex(t.fill[0]); warmFill.intensity = t.fill[1];
+  bloom.strength = t.bloom;
+  city.setDay(isDay);
+  document.querySelector('#theme-toggle').textContent = t.icon;
+}
+
+document.querySelector('#theme-toggle').addEventListener('click', () => {
+  isDay = !isDay;
+  applyTheme();
 });
 
 // ── Load city data ─────────────────────────────────────────────
@@ -84,8 +121,9 @@ renderer.domElement.addEventListener('pointermove', (e) => {
   }
 });
 
-renderer.domElement.addEventListener('click', () => {
+renderer.domElement.addEventListener('click', (e) => {
   if (fightRunning) return;
+  ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   const b = city.pick(ndc, camera);
   if (b) openSetup(b);
 });
@@ -108,7 +146,7 @@ function openSetup(building) {
   // Swoop toward the chosen building
   const p = building.group.position;
   rig.flyTo({
-    pos: new THREE.Vector3(p.x + 28, 24, p.z + 34),
+    pos: new THREE.Vector3(p.x + 36, Math.max(42, building.group.userData.height + 14), p.z + 48),
     target: new THREE.Vector3(p.x, building.group.userData.height / 2, p.z),
     dur: 1.4,
   });
@@ -166,10 +204,10 @@ subscribe((ev) => {
       });
       // Swoop to the arena lot
       rig.flyTo({
-        pos: new THREE.Vector3(arenaPos.x + 20, 15, arenaPos.z + 30),
-        target: arenaPos.clone().setY(4),
+        pos: new THREE.Vector3(arenaPos.x + 16, 18, arenaPos.z + 26),
+        target: arenaPos.clone().setY(5),
         dur: 1.8,
-        then: () => rig.orbitAround(arenaPos.clone().setY(5), 32, 15, 0.06),
+        then: () => rig.orbitAround(arenaPos.clone().setY(5), 23, 12, 0.06),
       });
       break;
     }
@@ -182,10 +220,10 @@ subscribe((ev) => {
       arena.refereeSpawn();
       // Cut to the referee walking in
       rig.flyTo({
-        pos: new THREE.Vector3(arenaPos.x, 6, arenaPos.z + 26),
-        target: new THREE.Vector3(arenaPos.x, 2, arenaPos.z + 8),
+        pos: new THREE.Vector3(arenaPos.x, 9, arenaPos.z + 26),
+        target: new THREE.Vector3(arenaPos.x, 3, arenaPos.z + 8),
         dur: 1.0,
-        then: () => rig.orbitAround(arenaPos.clone().setY(4), 26, 10, 0.05),
+        then: () => rig.orbitAround(arenaPos.clone().setY(4), 21, 9, 0.05),
       });
       break;
     }
@@ -194,8 +232,8 @@ subscribe((ev) => {
       arena.verdict(ev);
       // Pull back wide
       rig.flyTo({
-        pos: new THREE.Vector3(arenaPos.x + 34, 30, arenaPos.z + 44),
-        target: arenaPos.clone().setY(8),
+        pos: new THREE.Vector3(arenaPos.x + 42, 44, arenaPos.z + 56),
+        target: arenaPos.clone().setY(10),
         dur: 2.0,
       });
       break;
@@ -212,6 +250,9 @@ subscribe((ev) => {
     }
   }
 });
+
+// Debug handle for tests/tooling (not part of the event contract)
+window.__debug = { city, camera, rig, arena };
 
 // ── Loop ───────────────────────────────────────────────────────
 import { tickTweens } from './fight.js';

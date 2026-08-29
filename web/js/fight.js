@@ -50,6 +50,11 @@ export class FightArena {
     this.scene.add(this.group);
     this.agents = agents;
 
+    // Construction floodlight so the arena reads at night
+    const flood = new THREE.PointLight(0xfff0d0, 900, 70, 1.8);
+    flood.position.set(0, 22, 6);
+    this.group.add(flood);
+
     // Two construction pads
     const padGeo = new THREE.BoxGeometry(TOWER.baseWidth + 2, 0.3, TOWER.baseWidth + 2);
     for (const [side, dx] of [['a', -7.5], ['b', 7.5]]) {
@@ -94,19 +99,22 @@ export class FightArena {
   toolCalled(side, tool) {
     const s = this.sides[side];
     if (!s?.char) return;
-    if (s.toolSprite) { this.group.remove(s.toolSprite); s.toolSprite.material.map.dispose(); }
+    const g = this.group;
+    if (!g) return;
+    if (s.toolSprite) { g.remove(s.toolSprite); s.toolSprite.material.map.dispose(); }
     const sprite = makeTextSprite(tool, s.color);
-    sprite.position.copy(s.char.group.position).add(new THREE.Vector3(0, 2.9, 0));
-    this.group.add(sprite);
+    sprite.position.copy(s.char.group.position).add(new THREE.Vector3(0, 5.2, 0));
+    g.add(sprite);
     s.toolSprite = sprite;
     tween({ dur: 2.2, onUpdate: (p) => { sprite.material.opacity = 1 - p; },
-      onDone: () => { if (s.toolSprite === sprite) { this.group.remove(sprite); s.toolSprite = null; } } });
+      onDone: () => { g.remove(sprite); if (s.toolSprite === sprite) s.toolSprite = null; } });
   }
 
   // commit.pushed — drop a floor with squash-and-stretch
   commit(side) {
     const s = this.sides[side];
-    if (!s) return;
+    if (!s || !this.group) return;
+    const g = this.group;
     const idx = s.floors.length;
     if (idx >= TOWER.maxFloors) return;
     const h = TOWER.floorHeight;
@@ -115,13 +123,13 @@ export class FightArena {
       cols: 5, rows: 1, litRatio: 0.7, seed: 1000 + idx * 7 + (side === 'a' ? 0 : 500),
     });
     const mat = new THREE.MeshStandardMaterial({
-      map, emissiveMap, emissive: 0xffffff, emissiveIntensity: 1.1, roughness: 0.8,
+      map, emissiveMap, emissive: 0xffffff, emissiveIntensity: 0.85, roughness: 0.8,
     });
-    const roof = new THREE.MeshStandardMaterial({ color: 0x171c2b, roughness: 0.95 });
+    const roof = new THREE.MeshStandardMaterial({ color: 0x454b60, roughness: 0.95 });
     const floor = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), [mat, mat, roof, roof, mat, mat]);
     const targetY = 0.3 + idx * h + h / 2;
     floor.position.set(s.x, targetY + 14, 0);
-    this.group.add(floor);
+    g.add(floor);
     s.floors.push(floor);
 
     // Drop + squash/stretch: stretch tall while falling, squash on land, settle
@@ -156,9 +164,9 @@ export class FightArena {
       const mats = Array.isArray(f.material) ? f.material : [f.material];
       for (const m of mats) {
         if (!m.emissiveMap) continue;
-        const orig = m.emissive.getHex();
+        if (m.userData.origEmissive === undefined) m.userData.origEmissive = 0xffffff;
         m.emissive.setHex(col);
-        tween({ dur: 0.9, onUpdate: () => {}, onDone: () => m.emissive.setHex(orig) });
+        tween({ dur: 0.9, onUpdate: () => {}, onDone: () => m.emissive.setHex(m.userData.origEmissive) });
       }
     }
     if (!ok) this.cb.shake?.(0.15);
@@ -200,6 +208,8 @@ export class FightArena {
   }
 
   collapse(s) {
+    const g = this.group;
+    if (!g) return;
     s.floors.forEach((f, i) => {
       tween({
         delay: 0.15 * (s.floors.length - i), dur: 0.5, ease: (p) => p * p,
@@ -214,7 +224,7 @@ export class FightArena {
           tween({ dur: 0.8, onUpdate: (p) => {
             const mats = Array.isArray(f.material) ? f.material : [f.material];
             mats.forEach((m) => { m.transparent = true; m.opacity = 1 - p; });
-          }, onDone: () => { this.group.remove(f); } });
+          }, onDone: () => { g.remove(f); } });
         },
       });
     });
@@ -222,6 +232,8 @@ export class FightArena {
   }
 
   crown(s, then) {
+    const g = this.group;
+    if (!g) return;
     const topY = 0.3 + s.floors.length * TOWER.floorHeight;
     // Beam cable
     const cable = new THREE.Mesh(
@@ -229,14 +241,14 @@ export class FightArena {
       new THREE.MeshBasicMaterial({ color: 0x444c66 }),
     );
     cable.position.set(s.x, topY + 30, 0);
-    this.group.add(cable);
+    g.add(cable);
     // Crown: glowing star topper
     const crown = new THREE.Mesh(
       new THREE.OctahedronGeometry(1.1),
       new THREE.MeshStandardMaterial({ color: s.color, emissive: s.color, emissiveIntensity: 2.4 }),
     );
     crown.position.set(s.x, topY + 26, 0);
-    this.group.add(crown);
+    g.add(crown);
     tween({
       dur: 1.6, ease: easeOutCubic,
       onUpdate: (p) => {
@@ -245,7 +257,7 @@ export class FightArena {
         crown.rotation.y += 0.05;
       },
       onDone: () => {
-        this.group.remove(cable);
+        g.remove(cable);
         this.dust(s.x, topY + 1, 0, s.color, 18);
         s.crownMesh = crown;
         tween({ dur: 0.8, onUpdate: () => {}, onDone: then });
@@ -255,7 +267,8 @@ export class FightArena {
 
   // Winning floors fly onto the repo building
   mergeFly(s) {
-    if (!this.repoBuilding) return;
+    if (!this.repoBuilding || !this.group) return;
+    const g = this.group;   // capture: close() may null this.group mid-tween
     const target = new THREE.Vector3();
     this.repoBuilding.group.getWorldPosition(target);
     target.y = this.repoBuilding.group.userData.height ?? 10;
@@ -265,18 +278,19 @@ export class FightArena {
     flyers.forEach((f, i) => {
       f.getWorldPosition(world);
       const from = world.clone();
-      const local = this.group.worldToLocal(target.clone());
+      const local = g.worldToLocal(target.clone());
+      const fromLocal = g.worldToLocal(from.clone());
       tween({
         delay: 0.12 * i, dur: 1.1, ease: easeOutCubic,
         onUpdate: (p) => {
           const arc = Math.sin(p * Math.PI) * 8;
-          f.position.lerpVectors(this.group.worldToLocal(from.clone()), local, p);
+          f.position.lerpVectors(fromLocal, local, p);
           f.position.y += arc * (1 - p) * 0.3 + arc * 0.1;
           f.scale.setScalar(Math.max(0.05, 1 - p * 0.95));
           f.rotation.y += 0.08;
         },
         onDone: () => {
-          this.group.remove(f);
+          g.remove(f);
           if (i === flyers.length - 1) {
             this.cb.shake?.(0.3);
             this.cb.onPhase?.('merged');
@@ -289,6 +303,8 @@ export class FightArena {
 
   // simple dust burst
   dust(x, y, z, color, n = 12) {
+    if (!this.group) return;
+    const g = this.group;   // capture for the cleanup closure
     const geo = new THREE.BufferGeometry();
     const pos = new Float32Array(n * 3);
     const vel = [];
@@ -305,7 +321,7 @@ export class FightArena {
       color, size: 0.35, transparent: true, opacity: 0.9, depthWrite: false,
     });
     const pts = new THREE.Points(geo, mat);
-    this.group.add(pts);
+    g.add(pts);
     tween({
       dur: 1.1,
       onUpdate: (p) => {
@@ -319,7 +335,7 @@ export class FightArena {
         geo.attributes.position.needsUpdate = true;
         mat.opacity = 0.9 * (1 - p);
       },
-      onDone: () => { this.group.remove(pts); geo.dispose(); mat.dispose(); },
+      onDone: () => { g.remove(pts); geo.dispose(); mat.dispose(); },
     });
   }
 
@@ -360,7 +376,7 @@ function makeTextSprite(text, colorHex) {
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: tex, transparent: true, depthWrite: false,
   }));
-  sprite.scale.set(4.6, 0.86, 1);
+  sprite.scale.set(6.4, 1.2, 1);
   return sprite;
 }
 

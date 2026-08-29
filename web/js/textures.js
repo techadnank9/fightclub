@@ -9,7 +9,7 @@ const COOL = ['#bcd9ff', '#dceaff', '#9fc4f5'];
 
 // Facade: grid of windows, some lit. litRatio drives how alive the building looks.
 // Returns { map, emissiveMap } sharing the same canvas layout.
-export function makeFacadeTextures({ cols, rows, litRatio, faceColor = '#131a2e', seed = 1 }) {
+export function makeFacadeTextures({ cols, rows, litRatio, faceColor = '#4a5068', seed = 1 }) {
   const cell = 16;
   const w = cols * cell, h = rows * cell;
 

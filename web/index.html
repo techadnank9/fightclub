@@ -39,6 +39,12 @@
   }
   #topbar .title { font-weight: bold; letter-spacing: 2px; font-size: 14px; }
   #topbar .sub { color: var(--ink-dim); font-size: 11px; }
+  #theme-toggle {
+    pointer-events: auto; cursor: pointer; background: transparent;
+    border: 1px solid var(--panel-border); border-radius: 6px;
+    color: var(--ink); font-size: 14px; padding: 2px 8px;
+  }
+  #theme-toggle:hover { background: rgba(255,255,255,0.06); }
 
   /* ── Building tooltip ────────────────────── */
   #tip {
@@ -145,6 +151,7 @@
 <div id="topbar" class="panel">
   <span class="title">AGENT FIGHT CITY</span>
   <span class="sub">click a building to start a fight</span>
+  <button id="theme-toggle" title="day / night">☀</button>
 </div>
 
 <div id="tip" class="panel"></div>
