@@ -11,3 +11,5 @@ What broke and what we changed, one line each, newest last.
 - Gateway exposes exactly one model (openai/gpt-4.1) — no Anthropic provider configured yet, so fighter A runs gateway GPT-4.1 and fighter B runs direct OpenAI until one is added.
 - macOS python 3.14 urllib had no CA bundle (CERTIFICATE_VERIFY_FAILED); certifi context everywhere.
 - Frontend POSTs /fight before opening the EventSource, so the SSE stream replays session history first or the browser misses session.opened.
+- Referee crashed post-fight: bare `git fetch origin <branch>` on a shallow clone never creates origin/<branch>, only FETCH_HEAD; fetch with an explicit refspec.
+- Fighters committed __pycache__ and the referee docked them for it; commit_all now excludes bytecode.
