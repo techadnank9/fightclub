@@ -9,9 +9,9 @@ see CLAUDE.md. Do not invent new types without updating the frontend.
 from __future__ import annotations
 
 import json
-import sys
 import threading
 import time
+from pathlib import Path
 from typing import Any
 
 EVENT_TYPES = {
@@ -33,7 +33,11 @@ _lock = threading.Lock()
 class EventEmitter:
     def __init__(self, log_path: str | None = None):
         self.log_path = log_path
-        self._file = open(log_path, "a", encoding="utf-8") if log_path else None
+        if log_path:
+            Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+            self._file = open(log_path, "a", encoding="utf-8")
+        else:
+            self._file = None
 
     def emit(self, type_: str, **fields: Any) -> dict:
         if type_ not in EVENT_TYPES:

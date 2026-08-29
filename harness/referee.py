@@ -43,7 +43,10 @@ def _original_tests_from_main(ref_sandbox: Sandbox) -> Path:
 
 def _judge_branch(ref_sandbox: Sandbox, branch: str, original_tests: Path) -> dict:
     """Check out the branch in the referee clone, overlay ORIGINAL tests, run."""
-    _run(["git", "fetch", "origin", branch], cwd=ref_sandbox.path)
+    # Explicit refspec: a bare `fetch origin <branch>` on a shallow clone only
+    # writes FETCH_HEAD and origin/<branch> never exists (see BLOG.md).
+    _run(["git", "fetch", "origin", f"+refs/heads/{branch}:refs/remotes/origin/{branch}"],
+         cwd=ref_sandbox.path)
     _run(["git", "checkout", "-f", f"origin/{branch}"], cwd=ref_sandbox.path)
     # Overlay main's tests over whatever the fighter did to them
     dst = ref_sandbox.path / "tests"

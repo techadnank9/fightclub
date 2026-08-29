@@ -40,7 +40,8 @@ class Sandbox:
 
     def commit_all(self, message: str) -> str | None:
         """Stage everything and commit. Returns short sha, or None if nothing changed."""
-        _run(["git", "add", "-A"], cwd=self.path)
+        # Never stage bytecode: the referee (rightly) flags .pyc commits
+        _run(["git", "add", "-A", "--", ".", ":!*__pycache__*", ":!*.pyc"], cwd=self.path)
         st = _run(["git", "status", "--porcelain"], cwd=self.path)
         if not st.stdout.strip():
             return None

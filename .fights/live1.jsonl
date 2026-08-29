@@ -1,0 +1,38 @@
+{"type": "session.opened", "ts": 1788038576.082, "session": "fight-7883", "repo": "rust-lang/rust", "task": "slugify leaves leading/trailing hyphens and truncate exceeds the limit; make the test suite pass"}
+{"type": "fighter.started", "ts": 1788038576.686, "side": "a", "agent": "sonnet", "sandbox": "sb-a-7883", "branch": "fight/a-7883"}
+{"type": "fighter.started", "ts": 1788038576.959, "side": "b", "agent": "gpt", "sandbox": "sb-b-7883", "branch": "fight/b-7883"}
+{"type": "tool.called", "ts": 1788038578.204, "side": "a", "tool": "list files"}
+{"type": "tool.called", "ts": 1788038578.507, "side": "b", "tool": "list files"}
+{"type": "tool.called", "ts": 1788038579.026, "side": "b", "tool": "read test_textkit.py"}
+{"type": "tool.called", "ts": 1788038579.816, "side": "b", "tool": "read __init__.py"}
+{"type": "tool.called", "ts": 1788038580.326, "side": "a", "tool": "read test_textkit.py"}
+{"type": "tool.called", "ts": 1788038580.326, "side": "a", "tool": "read __init__.py"}
+{"type": "tool.called", "ts": 1788038580.659, "side": "b", "tool": "run tests"}
+{"type": "tests.result", "ts": 1788038581.439, "side": "b", "ok": false, "passed": 3, "total": 5}
+{"type": "tool.called", "ts": 1788038581.9, "side": "a", "tool": "run tests"}
+{"type": "tool.called", "ts": 1788038582.109, "side": "b", "tool": "read README.md"}
+{"type": "tool.called", "ts": 1788038582.109, "side": "b", "tool": "read __init__.py"}
+{"type": "tests.result", "ts": 1788038582.567, "side": "a", "ok": false, "passed": 3, "total": 5}
+{"type": "tool.called", "ts": 1788038583.805, "side": "b", "tool": "write __init__.py"}
+{"type": "tool.called", "ts": 1788038584.483, "side": "b", "tool": "commit"}
+{"type": "commit.pushed", "ts": 1788038584.581, "side": "b", "sha": "0a81f34", "msg": "fix: strip leading/trailing hyphens in slugify and keep trun"}
+{"type": "tool.called", "ts": 1788038584.625, "side": "a", "tool": "write __init__.py"}
+{"type": "tool.called", "ts": 1788038585.364, "side": "b", "tool": "run tests"}
+{"type": "tests.result", "ts": 1788038586.004, "side": "b", "ok": true, "passed": 5, "total": 5}
+{"type": "tool.called", "ts": 1788038586.772, "side": "a", "tool": "commit"}
+{"type": "commit.pushed", "ts": 1788038586.856, "side": "a", "sha": "ce25626", "msg": "fix: strip leading/trailing hyphens in slugify and truncate "}
+{"type": "tool.called", "ts": 1788038587.655, "side": "b", "tool": "write test_textkit.py"}
+{"type": "tool.called", "ts": 1788038588.172, "side": "b", "tool": "commit"}
+{"type": "commit.pushed", "ts": 1788038588.269, "side": "b", "sha": "4d93e49", "msg": "test: add regression tests for slugify hyphen strip & trunca"}
+{"type": "tool.called", "ts": 1788038588.924, "side": "a", "tool": "write test_textkit.py"}
+{"type": "tool.called", "ts": 1788038588.976, "side": "b", "tool": "run tests"}
+{"type": "tests.result", "ts": 1788038589.612, "side": "b", "ok": true, "passed": 7, "total": 7}
+{"type": "tool.called", "ts": 1788038590.094, "side": "a", "tool": "commit"}
+{"type": "commit.pushed", "ts": 1788038590.19, "side": "a", "sha": "5dc781a", "msg": "test: add regression test for truncate with very short limit"}
+{"type": "commit.pushed", "ts": 1788038590.355, "side": "b", "sha": "a4d9e38", "msg": "wip: end of fight"}
+{"type": "fighter.done", "ts": 1788038590.355, "side": "b"}
+{"type": "tool.called", "ts": 1788038591.523, "side": "a", "tool": "run tests"}
+{"type": "tests.result", "ts": 1788038592.148, "side": "a", "ok": true, "passed": 6, "total": 6}
+{"type": "commit.pushed", "ts": 1788038593.618, "side": "a", "sha": "2a9e339", "msg": "wip: end of fight"}
+{"type": "fighter.done", "ts": 1788038593.618, "side": "a"}
+{"type": "referee.spawned", "ts": 1788038595.689, "sandbox": "sb-ref-7883"}
