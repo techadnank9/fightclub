@@ -10,6 +10,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CITY } from './config.js';
 import { City } from './city.js';
 import { World } from './world.js';
+import { SpaceLayer, playSpaceDive } from './spaceIntro.js';
 import { CameraRig } from './cameraRig.js';
 import { FightArena } from './fight.js';
 import { Hud } from './hud.js';
@@ -31,7 +32,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(CITY.fogColor);
 scene.fog = new THREE.Fog(CITY.fogColor, CITY.fogNear, CITY.fogFar);
 
-const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 2600);
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 9000);
 camera.position.set(80, 60, 80);
 
 const composer = new EffectComposer(renderer);
@@ -53,6 +54,7 @@ scene.add(warmFill);
 // ── Systems ────────────────────────────────────────────────────
 const city = new City(scene);
 const world = new World(scene);
+const space = new SpaceLayer(scene);
 const rig = new CameraRig(camera, renderer.domElement);
 const hud = new Hud();
 const replay = new Replay();
@@ -88,6 +90,7 @@ function applyTheme() {
   bloom.strength = t.bloom;
   city.setDay(isDay);
   world.setDay(isDay);
+  space.setDay(isDay);
   document.querySelector('#theme-toggle').textContent = t.icon;
 }
 
@@ -105,7 +108,11 @@ world.build(plate.half);
 
 // Idle ambient orbit: low and wide so the skyline reads against the horizon.
 const idleOrbit = () => rig.orbitAround(new THREE.Vector3(0, 12, 0), 150, 46, 0.03);
-idleOrbit();
+// Space dive intro: start in orbit, plunge into the city. Drag skips it.
+playSpaceDive(rig, idleOrbit);
+document.querySelector('#space-dive').addEventListener('click', () => {
+  if (!fightRunning) playSpaceDive(rig, idleOrbit);
+});
 
 // ── Picking ────────────────────────────────────────────────────
 const ndc = new THREE.Vector2();
@@ -309,6 +316,15 @@ window.__debug = { city, camera, rig, arena, composer, renderer };
 import { tickTweens } from './fight.js';
 const clock = new THREE.Clock();
 
+const baseFog = { near: 0, far: 0 };
+function stretchFogForAltitude() {
+  const t = THEMES[isDay ? 'day' : 'night'];
+  const h = Math.max(0, camera.position.y);
+  const k = Math.max(1, h / 160);          // 1 at street level, grows in orbit
+  scene.fog.near = t.fogNear * k;
+  scene.fog.far = Math.max(t.fogFar * k, h * 3.2);
+}
+
 function loop() {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, clock.getDelta());
@@ -317,6 +333,8 @@ function loop() {
   city.tick(t);
   arena.tick(dt);
   tickTweens(dt);
+  space.tick(dt, camera.position.y);
+  stretchFogForAltitude();
   composer.render();
 }
 loop();

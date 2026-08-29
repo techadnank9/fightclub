@@ -20,6 +20,7 @@ export const AGENT_COLORS = {
   haiku:      0xffd97a,
   gpt:        0x7ec8ff,
   'gpt-mini': 0xa5d8ff,
+  gemini:     0x6fd68a,
   referee:    0xc9a5ff,
 };
 

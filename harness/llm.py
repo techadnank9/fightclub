@@ -51,8 +51,32 @@ AGENTS = {
     "haiku": ("tfy", ENV.get("TFY_MODEL", "openai/gpt-4.1")),
     "gpt": ("openai", "gpt-4.1"),
     "gpt-mini": ("openai", "gpt-4o-mini"),
+    "gemini": ("vertex", ENV.get("VERTEX_MODEL", "google/gemini-2.5-flash")),
     "referee": ("tfy", ENV.get("TFY_MODEL", "openai/gpt-4.1")),
 }
+
+# ── Google Vertex access-token minting (from the one-time OAuth refresh token,
+#    see google_auth.py). Cached until near expiry. ──
+_google_token: dict = {"value": None, "exp": 0.0}
+
+
+def _vertex_access_token() -> str:
+    if _google_token["value"] and time.time() < _google_token["exp"] - 60:
+        return _google_token["value"]
+    import urllib.parse
+    body = urllib.parse.urlencode({
+        "client_id": ENV["GOOGLE_OAUTH_CLIENT_ID"],
+        "client_secret": ENV["GOOGLE_OAUTH_CLIENT_SECRET"],
+        "refresh_token": ENV["GOOGLE_REFRESH_TOKEN"],
+        "grant_type": "refresh_token",
+    }).encode()
+    req = urllib.request.Request("https://oauth2.googleapis.com/token", data=body,
+                                 headers={"Content-Type": "application/x-www-form-urlencoded"})
+    with urllib.request.urlopen(req, timeout=30, context=_CTX) as r:
+        tok = json.load(r)
+    _google_token["value"] = tok["access_token"]
+    _google_token["exp"] = time.time() + tok.get("expires_in", 3600)
+    return _google_token["value"]
 
 
 def chat(agent: str, messages: list, tools: list | None = None,
@@ -62,6 +86,12 @@ def chat(agent: str, messages: list, tools: list | None = None,
     if provider == "tfy":
         url = ENV["TFY_BASE_URL"].rstrip("/") + "/chat/completions"
         key = ENV["TFY_API_KEY"]
+    elif provider == "vertex":
+        project = ENV.get("GOOGLE_PROJECT", ENV["GOOGLE_OAUTH_CLIENT_ID"].split("-")[0])
+        region = ENV.get("GOOGLE_REGION", "us-central1")
+        url = (f"https://{region}-aiplatform.googleapis.com/v1beta1/projects/"
+               f"{project}/locations/{region}/endpoints/openapi/chat/completions")
+        key = _vertex_access_token()
     else:
         url = "https://api.openai.com/v1/chat/completions"
         key = ENV["OPENAI_API_KEY"]
