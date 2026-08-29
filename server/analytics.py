@@ -35,13 +35,15 @@ _QUEUE_MAX = 10_000       # drop (never block) beyond this backlog
 
 
 def _load_env() -> dict:
-    env: dict = {}
+    # Process environment first (deployments), .env fills the gaps (local dev)
+    import os
+    env: dict = dict(os.environ)
     env_file = ROOT / "harness" / ".env"
     if env_file.exists():
         for line in env_file.read_text().splitlines():
             if "=" in line and not line.lstrip().startswith("#"):
                 k, v = line.split("=", 1)
-                env[k.strip()] = v.strip()
+                env.setdefault(k.strip(), v.strip())
     return env
 
 
