@@ -514,7 +514,9 @@ def main(argv: list[str]) -> int:
                     field_hits[f] += 1
                     if t not in PRIMARY_TIERS[f]:
                         fallback_tiers_seen[f].add(t)
-                if row["open_issues"]:
+                # Markup matched = hit, even with zero open issues (an empty
+                # list is a valid answer, not a broken parser).
+                if issues_tier is not None:
                     field_hits["open_issues"] += 1
                     if issues_tier not in PRIMARY_TIERS["open_issues"]:
                         fallback_tiers_seen["open_issues"].add(issues_tier)

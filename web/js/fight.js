@@ -227,9 +227,12 @@ export class FightArena {
     this.testResult(side, ok);
     if (this.referee) {
       const ref = this.referee;
+      const g = this.group;
       ref.walkTo(new THREE.Vector3(s.x + (side === 'a' ? 4.5 : -4.5), 0, 3.5), () => {
         ref.setState('idle');
-        ref.group.lookAt(this.group?.position.x ?? 0 + s.x, 1.5, this.group?.position.z ?? 0);
+        if (!g) return;
+        const target = g.localToWorld(new THREE.Vector3(s.x, 1.5, 0));
+        ref.group.lookAt(target);
       });
     }
   }

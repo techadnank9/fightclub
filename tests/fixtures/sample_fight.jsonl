@@ -17,7 +17,9 @@
 {"type": "tests.result", "side": "b", "ok": false, "passed": 9, "total": 10, "ts": 1018.6}
 {"type": "fighter.done", "side": "b", "ts": 1019.2}
 {"type": "referee.spawned", "sandbox": "sb-ref-fx01", "ts": 1020.4}
-{"type": "referee.finding", "side": "b", "severity": "medium", "msg": "1 test still failing on original suite", "ts": 1022.2}
-{"type": "referee.finding", "side": "a", "severity": "low", "msg": "comment-only churn in one file", "ts": 1023.7}
-{"type": "verdict", "winner": "a", "score": {"a": 88, "b": 64}, "pr": 4821, "deleted": "fight/b-fx01", "ts": 1025.7}
-{"type": "session.closed", "ts": 1029.7}
+{"type": "tests.result", "side": "a", "ok": true, "passed": 10, "total": 10, "by": "referee", "ts": 1022.0}
+{"type": "tests.result", "side": "b", "ok": false, "passed": 9, "total": 10, "by": "referee", "ts": 1023.4}
+{"type": "referee.finding", "side": "b", "severity": "medium", "msg": "1 test still failing on original suite", "ts": 1025.2}
+{"type": "referee.finding", "side": "a", "severity": "low", "msg": "comment-only churn in one file", "ts": 1026.7}
+{"type": "verdict", "winner": "a", "score": {"a": 98, "b": 86}, "breakdown": {"a": {"tests": 60.0, "review": 22.5, "economy": 15.0, "passed": 10, "total": 10, "findings": 1, "diffLines": 24}, "b": {"tests": 54.0, "review": 18.8, "economy": 13.2, "passed": 9, "total": 10, "findings": 1, "diffLines": 82}}, "pr": 4821, "deleted": "fight/b-fx01", "ts": 1028.7}
+{"type": "session.closed", "ts": 1032.7}

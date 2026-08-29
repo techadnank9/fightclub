@@ -87,6 +87,14 @@ async def _pump_subprocess(session: Session, cmd: list[str]) -> None:
 
 async def _pump_replay(session: Session, log_path: Path, speed: float = 1.0) -> None:
     """Replay a saved JSONL log honoring recorded ts spacing (capped)."""
+    try:
+        await _pump_replay_inner(session, log_path, speed)
+    finally:
+        if not session.done:
+            session.publish({"type": "session.closed"})
+
+
+async def _pump_replay_inner(session: Session, log_path: Path, speed: float) -> None:
     events = []
     for line in log_path.read_text().splitlines():
         line = line.strip()
@@ -103,8 +111,6 @@ async def _pump_replay(session: Session, log_path: Path, speed: float = 1.0) -> 
             await asyncio.sleep(gap)
         prev_ts = ts
         session.publish(ev)
-    if not session.done:
-        session.publish({"type": "session.closed"})
 
 
 @app.post("/fight")
@@ -121,11 +127,25 @@ async def start_fight(request: Request):
         # so the full pipeline still demos end to end.
         replay = "tests/fixtures/sample_fight.jsonl"
 
+    # Bound the session registry: evict oldest finished sessions
+    if len(SESSIONS) > 40:
+        for old_id in [k for k, v in SESSIONS.items() if v.done][:-20]:
+            SESSIONS.pop(old_id, None)
+
     if replay:
-        path = ROOT / replay
+        # Replay logs may only come from the two known log directories.
+        path = (ROOT / replay).resolve()
+        allowed = [(ROOT / "tests" / "fixtures").resolve(), (ROOT / ".fights").resolve()]
+        if not any(str(path).startswith(str(a) + "/") for a in allowed):
+            raise HTTPException(400, "replay must live in tests/fixtures or .fights")
         if not path.exists():
             raise HTTPException(404, f"no such replay log: {replay}")
-        asyncio.create_task(_pump_replay(session, path, float(body.get("speed", 1.0))))
+        try:
+            speed = float(body.get("speed", 1.0))
+        except (TypeError, ValueError):
+            speed = 1.0
+        speed = min(10000.0, max(0.1, speed))
+        asyncio.create_task(_pump_replay(session, path, speed))
     else:
         cmd = [sys.executable, "-m", "harness.fight",
                "--repo", body["repo"], "--task", body["task"],

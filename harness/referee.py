@@ -48,12 +48,20 @@ def _judge_branch(ref_sandbox: Sandbox, branch: str, original_tests: Path) -> di
     _run(["git", "fetch", "origin", f"+refs/heads/{branch}:refs/remotes/origin/{branch}"],
          cwd=ref_sandbox.path)
     _run(["git", "checkout", "-f", f"origin/{branch}"], cwd=ref_sandbox.path)
-    # Overlay main's tests over whatever the fighter did to them
+    # Overlay main's tests AND pytest config over whatever the fighter did:
+    # a branch-controlled conftest/pytest.ini could skip the original suite.
     dst = ref_sandbox.path / "tests"
     if (original_tests / "tests").exists():
         if dst.exists():
             shutil.rmtree(dst)
         shutil.copytree(original_tests / "tests", dst)
+    for extra in ("conftest.py", "pytest.ini", "pyproject.toml"):
+        saved = original_tests / extra
+        target = ref_sandbox.path / extra
+        if saved.exists():
+            shutil.copy(saved, target)
+        elif target.exists():
+            target.unlink()   # fighter added config main never had
     result = run_pytest(ref_sandbox.path)
     num, diff = _diff_vs_main(ref_sandbox)
     return {"tests": result, "diff_lines": num, "diff": diff}
@@ -120,7 +128,9 @@ def run_referee(session: str, task: str, target_repo: str,
 
     pr_number = None
     if open_pr:
-        pr_number = _open_pr_and_cleanup(ref, task, branches, winner, loser, results)
+        m = re.search(r"github\.com[:/]+([^/]+/[^/.]+)", target_repo)
+        slug = m.group(1) if m else None
+        pr_number = _open_pr_and_cleanup(ref, task, branches, winner, loser, results, slug)
 
     breakdown = {}
     for side in ("a", "b"):
@@ -135,7 +145,8 @@ def run_referee(session: str, task: str, target_repo: str,
 
 
 def _open_pr_and_cleanup(ref: Sandbox, task: str, branches: dict,
-                         winner: str, loser: str, results: dict) -> int | None:
+                         winner: str, loser: str, results: dict,
+                         slug: str | None = None) -> int | None:
     body = (
         f"Fight verdict: **{winner.upper()} wins** "
         f"{results[winner]['score']}-{results[loser]['score']}\n\n"
@@ -144,14 +155,21 @@ def _open_pr_and_cleanup(ref: Sandbox, task: str, branches: dict,
         "Opened automatically by the Agent Fight City referee. Qodo review requested."
     )
     try:
-        out = subprocess.run(
-            ["gh", "pr", "create", "--head", branches[winner], "--base", "main",
-             "--title", f"fight: {task[:60]}", "--body", body],
-            cwd=ref.path, capture_output=True, text=True, timeout=60)
+        cmd = ["gh", "pr", "create", "--head", branches[winner], "--base", "main",
+               "--title", f"fight: {task[:60]}", "--body", body]
+        if slug:
+            # Pin the PR to the target repo: on a fork, gh would otherwise
+            # open it against the UPSTREAM parent, which we never do.
+            cmd += ["--repo", slug]
+        out = subprocess.run(cmd, cwd=ref.path, capture_output=True, text=True, timeout=60)
         pr_number = None
         m = re.search(r"/pull/(\d+)", out.stdout + out.stderr)
         if m:
             pr_number = int(m.group(1))
+        if pr_number is None:
+            # PR did not open (transient gh/GitHub failure): keep BOTH branches
+            # so nothing is lost; the verdict will show no PR number.
+            return None
         subprocess.run(["git", "push", "origin", "--delete", branches[loser]],
                        cwd=ref.path, capture_output=True, text=True, timeout=60)
         return pr_number

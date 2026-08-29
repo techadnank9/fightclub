@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import re
 import secrets
+import subprocess
 import sys
 import time
 
@@ -21,6 +23,28 @@ from .sandbox import Sandbox
 from .agent_loop import run_fighter
 from .referee import run_referee
 from .llm import ENV
+
+
+def fork_of(repo: str) -> str | None:
+    """Fork repo into the signed-in account (idempotent) and return the fork URL.
+    Fights then run entirely on the fork — upstream never sees a bot PR."""
+    try:
+        me = subprocess.run(["gh", "api", "user", "--jq", ".login"],
+                            capture_output=True, text=True, timeout=30).stdout.strip()
+        if not me:
+            return None
+        subprocess.run(["gh", "repo", "fork", repo, "--clone=false"],
+                       capture_output=True, text=True, timeout=120)
+        name = repo.split("/")[1]
+        for _ in range(10):  # forking is async on GitHub's side
+            ok = subprocess.run(["gh", "api", f"repos/{me}/{name}", "--jq", ".full_name"],
+                                capture_output=True, text=True, timeout=30)
+            if ok.returncode == 0 and ok.stdout.strip():
+                return f"https://github.com/{me}/{name}.git"
+            time.sleep(3)
+    except Exception:
+        pass
+    return None
 
 
 def main() -> int:
@@ -32,9 +56,17 @@ def main() -> int:
     ap.add_argument("--target", default=ENV.get("TARGET_REPO"),
                     help="throwaway repo the fighters clone/push (URL or path)")
     ap.add_argument("--no-pr", action="store_true")
+    ap.add_argument("--fork", action="store_true",
+                    help="fork --repo into the signed-in account and fight on the fork "
+                         "(PR opens on the fork, never upstream)")
     ap.add_argument("--log", default=None, help="also append events to this JSONL file")
     args = ap.parse_args()
 
+    if args.fork:
+        args.target = fork_of(args.repo)
+        if not args.target:
+            print(f"could not fork {args.repo}", file=sys.stderr)
+            return 2
     if not args.target:
         print("no --target and no TARGET_REPO in env", file=sys.stderr)
         return 2

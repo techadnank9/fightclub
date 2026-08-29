@@ -193,31 +193,41 @@ setupEl.querySelector('#setup-start').addEventListener('click', () => {
   const task = custom || setupEl.querySelector('#issue-select').value;
   const a = setupEl.querySelector('#agent-a').value;
   const b = setupEl.querySelector('#agent-b').value;
+  // Capture now: `selected` is mutable global state and the fallback below
+  // runs later, when the user may have picked a different building.
+  const repoName = selected.repo.full_name;
   setupEl.style.display = 'none';
   setupBackdrop.style.display = 'none';
   // Per the brief: ?mock=1 forces the mock feed; otherwise use the backend.
   const useMock = new URLSearchParams(location.search).get('mock') === '1';
   if (useMock) {
-    startMockFight({ repo: selected.repo.full_name, task, a, b });
+    startMockFight({ repo: repoName, task, a, b });
   } else {
     fetch('/fight', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ repo: selected.repo.full_name, task, a, b }),
+      body: JSON.stringify({ repo: repoName, task, a, b }),
     }).then((r) => {
       if (!r.ok) throw new Error(`fight failed: ${r.status}`);
       return r.json();
     }).then(({ session }) => {
       const es = new EventSource(`/events?session=${session}`);
+      // Reconnects replay the session history from the server; skip what we
+      // have already dispatched instead of closing on the first error.
+      let seen = 0;
+      let sinceOpen = 0;
+      es.onopen = () => { sinceOpen = 0; };
       es.onmessage = (m) => {
+        sinceOpen += 1;
+        if (sinceOpen <= seen) return;
+        seen = sinceOpen;
         const ev = JSON.parse(m.data);
         dispatch(ev);
         if (ev.type === 'session.closed') es.close();
       };
-      es.onerror = () => es.close();
     }).catch(() => {
       // No backend running: fall back to the mock so the demo never bricks.
-      startMockFight({ repo: selected.repo.full_name, task, a, b });
+      startMockFight({ repo: repoName, task, a, b });
     });
   }
 });
