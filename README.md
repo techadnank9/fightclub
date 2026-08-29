@@ -17,6 +17,8 @@ a real test run. Every verdict is a real PR on GitHub.
 |---|---|
 | ![night city](docs/screenshots/city-night.png) | ![day city](docs/screenshots/world-day.png) |
 
+![verdict — referee scorecard](docs/screenshots/fight-verdict.png)
+
 ## Why this exists
 
 Benchmarks tell you which model is better on average. Nobody ships "on
