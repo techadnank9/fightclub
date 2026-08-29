@@ -217,7 +217,7 @@ subscribe((ev) => {
         pos: new THREE.Vector3(arenaPos.x + 16, 18, arenaPos.z + 26),
         target: arenaPos.clone().setY(5),
         dur: 1.8,
-        then: () => rig.orbitAround(arenaPos.clone().setY(5), 23, 12, 0.06),
+        then: () => rig.orbitAround(arenaPos.clone().setY(7), 31, 18, 0.055),
       });
       break;
     }

@@ -53,14 +53,17 @@ export class Character {
     this.hammer.visible = false;
     this.armR.add(this.hammer);
 
+    // Everyone on site wears a hard hat: referee yellow, fighters their color
+    const hatColor = referee ? 0xffd23e : color;
+    const hatMat = new THREE.MeshStandardMaterial({
+      color: hatColor, roughness: 0.45, emissive: hatColor, emissiveIntensity: 0.15,
+    });
+    const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.18, 10), hatMat);
+    hat.position.y = 0.3;
+    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.05, 0.5), hatMat);
+    brim.position.set(0, 0.2, 0.1);
+    this.head.add(hat, brim);
     if (referee) {
-      const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.18, 10),
-        new THREE.MeshStandardMaterial({ color: 0xffd23e, roughness: 0.5 }));
-      hat.position.y = 0.3;
-      const brim = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.05, 0.5),
-        new THREE.MeshStandardMaterial({ color: 0xffd23e, roughness: 0.5 }));
-      brim.position.set(0, 0.2, 0.1);
-      this.head.add(hat, brim);
       // Qodo badge on chest
       const badge = new THREE.Mesh(new THREE.CircleGeometry(0.12, 12),
         new THREE.MeshBasicMaterial({ color: 0x7a5cff }));

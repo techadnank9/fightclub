@@ -69,8 +69,15 @@ export class FightArena {
       );
       rim.position.set(dx, 0.06, 0);
       this.group.add(pad, rim);
+      const crane = makeCrane(color);
+      crane.position.set(dx + (side === 'a' ? -8.5 : 8.5), 0, 3.5);
+      crane.rotation.y = side === 'a' ? 2.2 : -2.2;
+      this.group.add(crane);
+      const scaffold = makeScaffold(TOWER.baseWidth + 0.6, TOWER.floorHeight + 0.5);
+      scaffold.position.set(dx, 0.3, 0);
+      this.group.add(scaffold);
       this.sides[side] = {
-        x: dx, color, floors: [], char: null, rim,
+        x: dx, color, floors: [], char: null, rim, crane, scaffold,
         toolSprite: null, done: false,
       };
     }
@@ -119,14 +126,17 @@ export class FightArena {
     if (idx >= TOWER.maxFloors) return;
     const h = TOWER.floorHeight;
     const w = TOWER.baseWidth * (1 - idx * 0.03);
+    // Fighter-tinted plaster wall so the tower reads as that agent's build
+    const tint = new THREE.Color(s.color).lerp(new THREE.Color(0x9aa0b5), 0.55);
     const { map, emissiveMap } = makeFacadeTextures({
-      cols: 5, rows: 1, litRatio: 0.7, seed: 1000 + idx * 7 + (side === 'a' ? 0 : 500),
+      cols: 8, rows: 2, litRatio: 0.65, seed: 1000 + idx * 7 + (side === 'a' ? 0 : 500),
+      faceColor: '#' + tint.getHexString(),
     });
     const mat = new THREE.MeshStandardMaterial({
       map, emissiveMap, emissive: 0xffffff, emissiveIntensity: 0.85, roughness: 0.8,
     });
-    const roof = new THREE.MeshStandardMaterial({ color: 0x454b60, roughness: 0.95 });
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), [mat, mat, roof, roof, mat, mat]);
+    const roof = new THREE.MeshStandardMaterial({ color: 0x2c3040, roughness: 0.95 });
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.94, w), [mat, mat, roof, roof, mat, mat]);
     const targetY = 0.3 + idx * h + h / 2;
     floor.position.set(s.x, targetY + 14, 0);
     g.add(floor);
@@ -143,6 +153,14 @@ export class FightArena {
       onDone: () => {
         this.cb.shake?.(0.25);
         this.dust(s.x, 0.4, 0, s.color, 10);
+        if (s.scaffold) {
+          const top = 0.3 + (idx + 1) * TOWER.floorHeight;
+          tween({ dur: 0.5, onUpdate: (p) => { s.scaffold.position.y = s.scaffold.position.y + (top - s.scaffold.position.y) * p; } });
+        }
+        if (s.crane) {
+          const jib = s.crane.userData.jib;
+          if (jib) tween({ dur: 0.8, onUpdate: () => { jib.rotation.y += 0.02; } });
+        }
         tween({
           dur: 0.4, ease: easeOutBack,
           onUpdate: (p) => {
@@ -175,7 +193,15 @@ export class FightArena {
   fighterDone(side) {
     const s = this.sides[side];
     s?.char?.setState('idle');
-    if (s) s.done = true;
+    if (s) {
+      s.done = true;
+      if (s.scaffold) {
+        const sc = s.scaffold;
+        tween({ dur: 0.8, onUpdate: (p) => { sc.scale.setScalar(Math.max(0.01, 1 - p)); },
+          onDone: () => { sc.parent?.remove(sc); } });
+        s.scaffold = null;
+      }
+    }
   }
 
   // referee.spawned — walks in between the towers
@@ -354,9 +380,72 @@ export class FightArena {
   }
 
   tick(dt) {
-    for (const side of Object.values(this.sides)) side.char?.tick(dt);
+    this._sparkT = (this._sparkT ?? 0) + dt;
+    for (const side of Object.values(this.sides)) {
+      side.char?.tick(dt);
+      if (side.char?.state === 'work' && this._sparkT > 0.85) {
+        const p = side.char.group.position;
+        this.dust(p.x + Math.sin(side.char.group.rotation.y) * 1.2, 1.4,
+                  p.z + Math.cos(side.char.group.rotation.y) * 1.2, 0xffe9a0, 5);
+      }
+    }
+    if (this._sparkT > 0.85) this._sparkT = 0;
     this.referee?.tick(dt);
   }
+}
+
+// Tower crane: mast + counterweighted jib + hanging hook. Pure dressing.
+function makeCrane(color) {
+  const g = new THREE.Group();
+  const steel = new THREE.MeshStandardMaterial({ color: 0xd8b13c, roughness: 0.6 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x23283a, roughness: 0.9 });
+  const mastH = 16;
+  const mast = new THREE.Mesh(new THREE.BoxGeometry(0.7, mastH, 0.7), steel);
+  mast.position.y = mastH / 2;
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.1, 1.3), dark);
+  cab.position.y = mastH + 0.55;
+  const jib = new THREE.Group();
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(11, 0.5, 0.5), steel);
+  arm.position.x = 4.2;
+  const tail = new THREE.Mesh(new THREE.BoxGeometry(3, 0.5, 0.5), steel);
+  tail.position.x = -2.6;
+  const weight = new THREE.Mesh(new THREE.BoxGeometry(1, 1.2, 1), dark);
+  weight.position.set(-3.6, -0.5, 0);
+  const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 6, 4), dark);
+  cable.position.set(8.2, -3, 0);
+  const hook = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.8 }));
+  hook.position.set(8.2, -6.2, 0);
+  jib.add(arm, tail, weight, cable, hook);
+  jib.position.y = mastH + 1.2;
+  g.add(mast, cab, jib);
+  g.userData.jib = jib;
+  const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8),
+    new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0xff2222, emissiveIntensity: 2 }));
+  beacon.position.y = mastH + 2;
+  beacon.userData.blink = { phase: Math.random() * 6 };
+  g.add(beacon);
+  return g;
+}
+
+// Scaffold cage that rides the top floor: 4 corner posts + rails.
+function makeScaffold(w, h) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: 0xc9752e, roughness: 0.7 });
+  const half = w / 2;
+  for (const [px, pz] of [[-half, -half], [half, -half], [-half, half], [half, half]]) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, h, 0.16), mat);
+    post.position.set(px, h / 2, pz);
+    g.add(post);
+  }
+  for (const y of [h * 0.45, h * 0.95]) {
+    for (const [rx, rz, lx, lz] of [[0, -half, w, 0.14], [0, half, w, 0.14], [-half, 0, 0.14, w], [half, 0, 0.14, w]]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(lx, 0.12, lz), mat);
+      rail.position.set(rx, y, rz);
+      g.add(rail);
+    }
+  }
+  return g;
 }
 
 function makeTextSprite(text, colorHex) {
