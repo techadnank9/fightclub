@@ -204,7 +204,7 @@ ISSUE_JSON_NT = re.compile(r'"number"\s*:\s*(\d+)\s*,\s*"title"\s*:\s*"((?:[^"\\
 ISSUE_JSON_TN = re.compile(r'"title"\s*:\s*"((?:[^"\\]|\\.)+)"\s*,\s*"number"\s*:\s*(\d+)')
 
 PRIMARY_TIERS = {
-    "language": {"org-listing-json", "profile-itemprop"},
+    "language": {"org-listing-json", "profile-itemprop", "carried"},
     "stars": {"stars-counter-title"},
     "commits": {"embedded-commitCount"},
     "open_issues": {"relay-titleHtml"},
@@ -441,20 +441,11 @@ def scrape_one(token: str, zone: str, full_name: str, spend) -> tuple[dict, dict
     issues, issues_tier = parse_issues_page(ihtml, full_name)
     row["open_issues"] = issues
 
-    # Page 3 (only if still needed): owner listing -> language.
-    if not row.get("language"):
-        q = urllib.parse.quote(name)
-        lhtml = None
-        try:
-            lhtml = spend(lambda: unlocker_fetch(
-                token, zone, f"https://github.com/orgs/{owner}/repositories?q={q}"))
-        except PageNotFound:
-            lhtml = spend(lambda: unlocker_fetch(
-                token, zone, f"https://github.com/{owner}?tab=repositories&q={q}"))
-        if lhtml:
-            lang, t = parse_owner_listing(lhtml, owner, name)
-            if lang:
-                row["language"], tiers["language"] = lang, t
+    # Language: every page that carries it (org/profile listings, search) is
+    # robots.txt-blocked for no-KYC residential access, and the repo page
+    # itself renders it client-side (verified live 2026-08-29, see rules.md).
+    # Language is static metadata for established repos, so it is carried
+    # from the last known row instead of burning a blocked request.
 
     return row, tiers, issues_tier
 
@@ -510,6 +501,10 @@ def main(argv: list[str]) -> int:
             row = None
             try:
                 row, tiers, issues_tier = scrape_one(token, zone, full_name, spend)
+                # Language is carried metadata (see scrape_one) — not a miss.
+                if not row.get("language"):
+                    row["language"] = fallback_rows[full_name]["language"]
+                tiers.setdefault("language", "carried")
                 for f, t in tiers.items():
                     field_hits[f] += 1
                     if t not in PRIMARY_TIERS[f]:

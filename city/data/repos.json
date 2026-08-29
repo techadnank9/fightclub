@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-29T21:41:46+00:00",
-  "source": "seed fallback (Bright Data token rejected; see city/rules.md heal log)",
+  "generated_at": "2026-08-29T22:41:51+00:00",
+  "source": "brightdata web-unlocker zone=mcp_unlocker (github.com pages, not the API)",
   "repos": [
     {
       "full_name": "vercel/next.js",

@@ -61,8 +61,20 @@ _google_token: dict = {"value": None, "exp": 0.0}
 
 
 def _vertex_access_token() -> str:
-    if _google_token["value"] and time.time() < _google_token["exp"] - 60:
+    """Prefer the machine's gcloud login (zero setup); fall back to the OAuth
+    refresh token from google_auth.py when gcloud is absent."""
+    if _google_token["value"] and time.time() < _google_token["exp"] - 120:
         return _google_token["value"]
+    import subprocess
+    try:
+        tok = subprocess.run(["gcloud", "auth", "print-access-token"],
+                             capture_output=True, text=True, timeout=30).stdout.strip()
+        if tok:
+            _google_token["value"] = tok
+            _google_token["exp"] = time.time() + 45 * 60
+            return tok
+    except Exception:
+        pass
     import urllib.parse
     body = urllib.parse.urlencode({
         "client_id": ENV["GOOGLE_OAUTH_CLIENT_ID"],

@@ -86,3 +86,4 @@ broke and which fallback tier (if any) healed it.
 ## Heal log
 - **2026-08-29 21:35 UTC** — run aborted before scraping: Bright Data API rejected the token (HTTP 401 from /zone/get_active_zones: Token expired). Wrote full seed fallback for all 24 repos; no page was fetched.
 - **2026-08-29 21:41 UTC** — run aborted before scraping: Bright Data API rejected the token (HTTP 401 from /zone/get_active_zones: Token expired). Wrote previous/seed fallback for all 24 repos.
+- **2026-08-29 22:41 UTC** — `language` missing for 9/9 scraped repos (zone `mcp_unlocker`) — GitHub markup likely changed; every fallback pattern tier in scrape.py was tried. Affected rows fell back to their previous/seed entries.
