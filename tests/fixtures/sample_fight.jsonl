@@ -1,0 +1,25 @@
+{"type": "session.opened", "session": "fight-fx01", "repo": "rust-lang/rust", "task": "Borrow checker error message points at wrong span", "ts": 1000.0}
+{"type": "fighter.started", "side": "a", "agent": "sonnet", "sandbox": "sb-a-fx01", "branch": "fight/a-fx01", "ts": 1000.8}
+{"type": "fighter.started", "side": "b", "agent": "gpt", "sandbox": "sb-b-fx01", "branch": "fight/b-fx01", "ts": 1001.4}
+{"type": "tool.called", "side": "a", "tool": "read failing test", "ts": 1002.9}
+{"type": "tool.called", "side": "b", "tool": "grep call sites", "ts": 1004.1}
+{"type": "tool.called", "side": "a", "tool": "edit span.rs", "ts": 1005.9}
+{"type": "commit.pushed", "side": "a", "sha": "a1b2c3d", "msg": "fix span origin", "ts": 1007.0}
+{"type": "tests.result", "side": "a", "ok": false, "passed": 7, "total": 10, "ts": 1007.9}
+{"type": "tool.called", "side": "b", "tool": "edit diagnostics.rs", "ts": 1009.3}
+{"type": "commit.pushed", "side": "b", "sha": "b4e5f6a", "msg": "point at use site", "ts": 1010.5}
+{"type": "tests.result", "side": "b", "ok": false, "passed": 8, "total": 10, "ts": 1011.3}
+{"type": "tool.called", "side": "a", "tool": "write regression test", "ts": 1012.9}
+{"type": "commit.pushed", "side": "a", "sha": "c7d8e9f", "msg": "add regression test", "ts": 1014.2}
+{"type": "tests.result", "side": "a", "ok": true, "passed": 10, "total": 10, "ts": 1015.1}
+{"type": "fighter.done", "side": "a", "ts": 1015.8}
+{"type": "tool.called", "side": "b", "tool": "run tests", "ts": 1017.6}
+{"type": "tests.result", "side": "b", "ok": false, "passed": 9, "total": 10, "ts": 1018.6}
+{"type": "fighter.done", "side": "b", "ts": 1019.2}
+{"type": "referee.spawned", "sandbox": "sb-ref-fx01", "ts": 1020.4}
+{"type": "tests.result", "side": "a", "ok": true, "passed": 10, "total": 10, "by": "referee", "ts": 1022.0}
+{"type": "tests.result", "side": "b", "ok": false, "passed": 9, "total": 10, "by": "referee", "ts": 1023.4}
+{"type": "referee.finding", "side": "b", "severity": "medium", "msg": "1 test still failing on original suite", "ts": 1025.2}
+{"type": "referee.finding", "side": "a", "severity": "low", "msg": "comment-only churn in one file", "ts": 1026.7}
+{"type": "verdict", "winner": "a", "score": {"a": 98, "b": 86}, "breakdown": {"a": {"tests": 60.0, "review": 22.5, "economy": 15.0, "passed": 10, "total": 10, "findings": 1, "diffLines": 24}, "b": {"tests": 54.0, "review": 18.8, "economy": 13.2, "passed": 9, "total": 10, "findings": 1, "diffLines": 82}}, "pr": 4821, "deleted": "fight/b-fx01", "ts": 1028.7}
+{"type": "session.closed", "ts": 1032.7}

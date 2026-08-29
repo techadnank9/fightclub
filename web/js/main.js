@@ -9,6 +9,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 import { CITY } from './config.js';
 import { City } from './city.js';
+import { World } from './world.js';
+import { SpaceLayer, playSpaceDive } from './spaceIntro.js';
 import { CameraRig } from './cameraRig.js';
 import { FightArena } from './fight.js';
 import { Hud } from './hud.js';
@@ -30,7 +32,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(CITY.fogColor);
 scene.fog = new THREE.Fog(CITY.fogColor, CITY.fogNear, CITY.fogFar);
 
-const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 1200);
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 9000);
 camera.position.set(80, 60, 80);
 
 const composer = new EffectComposer(renderer);
@@ -51,6 +53,8 @@ scene.add(warmFill);
 
 // ── Systems ────────────────────────────────────────────────────
 const city = new City(scene);
+const world = new World(scene);
+const space = new SpaceLayer(scene);
 const rig = new CameraRig(camera, renderer.domElement);
 const hud = new Hud();
 const replay = new Replay();
@@ -67,7 +71,7 @@ const THEMES = {
     bloom: 0.42, icon: '☀',
   },
   day: {
-    bg: 0xa8c4e0, fogNear: 180, fogFar: 700,
+    bg: 0xa8c4e0, fogNear: 300, fogFar: 1500,
     ambient: [0xdfe8ff, 1.05], key: [0xfff2d9, 1.7], fill: [0xbcd4ff, 0.35],
     bloom: 0.1, icon: '🌙',
   },
@@ -85,6 +89,8 @@ function applyTheme() {
   warmFill.color.setHex(t.fill[0]); warmFill.intensity = t.fill[1];
   bloom.strength = t.bloom;
   city.setDay(isDay);
+  world.setDay(isDay);
+  space.setDay(isDay);
   document.querySelector('#theme-toggle').textContent = t.icon;
 }
 
@@ -94,11 +100,19 @@ document.querySelector('#theme-toggle').addEventListener('click', () => {
 });
 
 // ── Load city data ─────────────────────────────────────────────
-const data = await fetch('./data/repos.json').then((r) => r.json());
-city.build(data.repos);
+// Prefer the server's /repos (live Bright Data scrape); fall back to the seed.
+const data = await fetch('/repos').then((r) => (r.ok ? r.json() : Promise.reject()))
+  .catch(() => fetch('./data/repos.json').then((r) => r.json()));
+const plate = city.build(data.repos);
+world.build(plate.half);
 
-// Idle ambient orbit over the city
-rig.orbitAround(new THREE.Vector3(0, 6, 0), 120, 70, 0.03);
+// Idle ambient orbit: low and wide so the skyline reads against the horizon.
+const idleOrbit = () => rig.orbitAround(new THREE.Vector3(0, 12, 0), 150, 46, 0.03);
+// Space dive intro: start in orbit, plunge into the city. Drag skips it.
+playSpaceDive(rig, idleOrbit);
+document.querySelector('#space-dive').addEventListener('click', () => {
+  if (!fightRunning) playSpaceDive(rig, idleOrbit);
+});
 
 // ── Picking ────────────────────────────────────────────────────
 const ndc = new THREE.Vector2();
@@ -130,6 +144,14 @@ renderer.domElement.addEventListener('click', (e) => {
 
 // ── Fight setup dialog ─────────────────────────────────────────
 const setupEl = document.querySelector('#setup');
+const setupBackdrop = document.querySelector('#setup-backdrop');
+
+function closeSetup() {
+  setupEl.style.display = 'none';
+  setupBackdrop.style.display = 'none';
+  selected = null;
+  idleOrbit();
+}
 
 function openSetup(building) {
   selected = building;
@@ -143,6 +165,7 @@ function openSetup(building) {
     sel.appendChild(o);
   }
   setupEl.style.display = 'block';
+  setupBackdrop.style.display = 'block';
   // Swoop toward the chosen building
   const p = building.group.position;
   rig.flyTo({
@@ -152,10 +175,23 @@ function openSetup(building) {
   });
 }
 
-setupEl.querySelector('#setup-cancel').addEventListener('click', () => {
-  setupEl.style.display = 'none';
-  selected = null;
-  rig.orbitAround(new THREE.Vector3(0, 6, 0), 120, 70, 0.03);
+setupEl.querySelector('#setup-cancel').addEventListener('click', closeSetup);
+setupEl.querySelector('#setup-close').addEventListener('click', closeSetup);
+// Clicking anywhere outside the dialog behaves exactly like CANCEL. The
+// backdrop only exists while the dialog is open, so the click that opened
+// it can never immediately close it.
+setupBackdrop.addEventListener('click', closeSetup);
+addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && setupEl.style.display === 'block') closeSetup();
+});
+
+// Verdict overlay: outside click = BACK TO CITY. It opens from a fight
+// event, never from a click, so there is no open/close race.
+const verdictEl = document.querySelector('#verdict');
+document.addEventListener('pointerdown', (e) => {
+  if (verdictEl.classList.contains('show') && !verdictEl.contains(e.target)) {
+    document.querySelector('#verdict-close').click();
+  }
 });
 
 setupEl.querySelector('#setup-start').addEventListener('click', () => {
@@ -164,22 +200,41 @@ setupEl.querySelector('#setup-start').addEventListener('click', () => {
   const task = custom || setupEl.querySelector('#issue-select').value;
   const a = setupEl.querySelector('#agent-a').value;
   const b = setupEl.querySelector('#agent-b').value;
+  // Capture now: `selected` is mutable global state and the fallback below
+  // runs later, when the user may have picked a different building.
+  const repoName = selected.repo.full_name;
   setupEl.style.display = 'none';
-  const useMock = new URLSearchParams(location.search).get('mock') !== '0';
+  setupBackdrop.style.display = 'none';
+  // Per the brief: ?mock=1 forces the mock feed; otherwise use the backend.
+  const useMock = new URLSearchParams(location.search).get('mock') === '1';
   if (useMock) {
-    startMockFight({ repo: selected.repo.full_name, task, a, b });
+    startMockFight({ repo: repoName, task, a, b });
   } else {
     fetch('/fight', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ repo: selected.repo.full_name, task, a, b }),
-    }).then((r) => r.json()).then(({ session }) => {
+      body: JSON.stringify({ repo: repoName, task, a, b }),
+    }).then((r) => {
+      if (!r.ok) throw new Error(`fight failed: ${r.status}`);
+      return r.json();
+    }).then(({ session }) => {
       const es = new EventSource(`/events?session=${session}`);
+      // Reconnects replay the session history from the server; skip what we
+      // have already dispatched instead of closing on the first error.
+      let seen = 0;
+      let sinceOpen = 0;
+      es.onopen = () => { sinceOpen = 0; };
       es.onmessage = (m) => {
+        sinceOpen += 1;
+        if (sinceOpen <= seen) return;
+        seen = sinceOpen;
         const ev = JSON.parse(m.data);
         dispatch(ev);
         if (ev.type === 'session.closed') es.close();
       };
+    }).catch(() => {
+      // No backend running: fall back to the mock so the demo never bricks.
+      startMockFight({ repo: repoName, task, a, b });
     });
   }
 });
@@ -207,14 +262,17 @@ subscribe((ev) => {
         pos: new THREE.Vector3(arenaPos.x + 16, 18, arenaPos.z + 26),
         target: arenaPos.clone().setY(5),
         dur: 1.8,
-        then: () => rig.orbitAround(arenaPos.clone().setY(5), 23, 12, 0.06),
+        then: () => rig.orbitAround(arenaPos.clone().setY(7), 31, 18, 0.055),
       });
       break;
     }
     case 'fighter.started': arena.fighterStart(ev.side, ev.agent); break;
     case 'tool.called':     arena.toolCalled(ev.side, ev.tool); break;
     case 'commit.pushed':   arena.commit(ev.side); break;
-    case 'tests.result':    arena.testResult(ev.side, ev.ok); break;
+    case 'tests.result':
+      if (ev.by === 'referee') arena.refereeInspect(ev.side, ev.ok);
+      else arena.testResult(ev.side, ev.ok);
+      break;
     case 'fighter.done':    arena.fighterDone(ev.side); break;
     case 'referee.spawned': {
       arena.refereeSpawn();
@@ -243,7 +301,7 @@ subscribe((ev) => {
       setTimeout(() => {
         if (!fightRunning) {
           arena.close();
-          rig.orbitAround(new THREE.Vector3(0, 6, 0), 120, 70, 0.03);
+          idleOrbit();
         }
       }, 4000);
       break;
@@ -252,11 +310,20 @@ subscribe((ev) => {
 });
 
 // Debug handle for tests/tooling (not part of the event contract)
-window.__debug = { city, camera, rig, arena };
+window.__debug = { city, camera, rig, arena, composer, renderer };
 
 // ── Loop ───────────────────────────────────────────────────────
 import { tickTweens } from './fight.js';
 const clock = new THREE.Clock();
+
+const baseFog = { near: 0, far: 0 };
+function stretchFogForAltitude() {
+  const t = THEMES[isDay ? 'day' : 'night'];
+  const h = Math.max(0, camera.position.y);
+  const k = Math.max(1, h / 160);          // 1 at street level, grows in orbit
+  scene.fog.near = t.fogNear * k;
+  scene.fog.far = Math.max(t.fogFar * k, h * 3.2);
+}
 
 function loop() {
   requestAnimationFrame(loop);
@@ -266,6 +333,8 @@ function loop() {
   city.tick(t);
   arena.tick(dt);
   tickTweens(dt);
+  space.tick(dt, camera.position.y);
+  stretchFogForAltitude();
   composer.render();
 }
 loop();

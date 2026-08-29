@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Fight City repo feed",
+  "description": "Contract for city/data/repos.json (and the seed web/data/repos.json). Validated by plain-python checks in city/scrape.py that mirror this schema exactly (no jsonschema dependency).",
+  "type": "object",
+  "required": ["generated_at", "source", "repos"],
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "description": "ISO-8601 UTC timestamp of the scrape run"
+    },
+    "source": {
+      "type": "string",
+      "description": "Human-readable provenance: Bright Data product + zone, or seed-fallback reason"
+    },
+    "repos": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/repo" }
+    }
+  },
+  "definitions": {
+    "repo": {
+      "type": "object",
+      "required": ["full_name", "language", "stars", "commits", "open_issues"],
+      "properties": {
+        "full_name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "stars": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "commits": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Approximated from any commit count visible on the scraped repo page; 0 when no count is visible (documented in city/rules.md)"
+        },
+        "open_issues": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "required": ["number", "title"],
+            "properties": {
+              "number": { "type": "integer", "minimum": 1 },
+              "title": { "type": "string", "minLength": 1, "maxLength": 300 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

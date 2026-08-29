@@ -20,6 +20,7 @@ export const AGENT_COLORS = {
   haiku:      0xffd97a,
   gpt:        0x7ec8ff,
   'gpt-mini': 0xa5d8ff,
+  gemini:     0x6fd68a,
   referee:    0xc9a5ff,
 };
 
@@ -28,8 +29,8 @@ export const CITY = {
   streetWidth: 10,
   fightLotIndex: null,  // assigned at layout time (center-ish empty lot)
   fogColor: 0x0a0e1a,
-  fogNear: 90,
-  fogFar: 420,
+  fogNear: 130,
+  fogFar: 950,   // was 420 when the city floated in void; the world extends to ~900
 };
 
 export const TOWER = {

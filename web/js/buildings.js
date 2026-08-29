@@ -15,10 +15,11 @@ export function repoSeed(fullName) {
   return Math.abs(s) + 1;
 }
 
-// Height scaling: log stars so linux does not dwarf everything.
+// Height scaling: proportional to real stars (1 floor ≈ 6k stars), so a
+// 231k-star repo honestly towers over a 17k one. Capped so the tallest
+// stays inside the fog/camera envelope.
 function floorsFor(repo) {
-  const s = Math.log10(Math.max(10, repo.stars));
-  return Math.round(4 + (s - 1) * 4.2); // ~8..25 floors
+  return Math.min(45, Math.max(3, Math.round(repo.stars / 6000) + 3));
 }
 
 export function makeBuilding(repo) {
