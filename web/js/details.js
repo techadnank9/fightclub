@@ -34,8 +34,8 @@ export class Details {
   reset() {
     this.meta = { repo: '', task: '', session: '' };
     this.sides = {
-      a: { agent: '—', branch: '', sandbox: '', rows: [], commits: 0, tests: null },
-      b: { agent: '—', branch: '', sandbox: '', rows: [], commits: 0, tests: null },
+      a: { agent: '—', branch: '', sandbox: '', rows: [], commits: 0, tests: null, refTests: null },
+      b: { agent: '—', branch: '', sandbox: '', rows: [], commits: 0, tests: null, refTests: null },
     };
     this.findings = [];
     this.verdict = null;
@@ -65,8 +65,15 @@ export class Details {
         s.rows.push({ kind: 'commit', sha: ev.sha, text: ev.msg, n: s.commits });
         break;
       case 'tests.result':
-        s.tests = { passed: ev.passed, total: ev.total, ok: ev.ok };
-        s.rows.push({ kind: 'tests', text: `${ev.passed}/${ev.total}`, ok: ev.ok });
+        // by:'referee' is the ORIGINAL suite from main re-run on the branch —
+        // authoritative, and not the same as the fighter's own run.
+        if (ev.by === 'referee') {
+          s.refTests = { passed: ev.passed, total: ev.total, ok: ev.ok };
+          s.rows.push({ kind: 'reftests', text: `referee re-ran main's tests: ${ev.passed}/${ev.total}`, ok: ev.ok });
+        } else {
+          s.tests = { passed: ev.passed, total: ev.total, ok: ev.ok };
+          s.rows.push({ kind: 'tests', text: `${ev.passed}/${ev.total}`, ok: ev.ok });
+        }
         break;
       case 'fighter.done':
         s.rows.push({ kind: 'done', text: 'finished — waiting for referee' });
@@ -96,8 +103,34 @@ export class Details {
       col.querySelector('.dbadge').className = `dbadge ${won ? 'win' : 'lose'}`;
       col.querySelector('.dmeta').textContent =
         [s.branch, s.sandbox, `${s.commits} commit${s.commits === 1 ? '' : 's'}`,
-         s.tests ? `${s.tests.passed}/${s.tests.total} tests` : null]
+         s.tests ? `${s.tests.passed}/${s.tests.total} own tests` : null,
+         s.refTests ? `${s.refTests.passed}/${s.refTests.total} referee tests` : null]
         .filter(Boolean).join('  ·  ');
+
+      // Score breakdown, once the verdict carries one
+      const bd = this.verdict?.breakdown?.[side];
+      const bEl = col.querySelector('.dscore');
+      if (bd) {
+        bEl.style.display = 'block';
+        bEl.innerHTML = '';
+        const parts = [
+          ['tests', bd.tests, 60, `${bd.passed}/${bd.total} on main's suite`],
+          ['review', bd.review, 25, `${bd.findings} qodo finding${bd.findings === 1 ? '' : 's'}`],
+          ['economy', bd.economy, 15, `${bd.diffLines} diff lines`],
+        ];
+        for (const [name, val, cap, detail] of parts) {
+          const row = document.createElement('div');
+          row.className = 'dscomp';
+          row.innerHTML = `<span class="sn"></span><span class="sbar"><i></i></span><span class="sv"></span><span class="sd"></span>`;
+          row.querySelector('.sn').textContent = name;
+          row.querySelector('.sv').textContent = `${val}/${cap}`;
+          row.querySelector('.sd').textContent = detail;
+          row.querySelector('.sbar i').style.width = `${Math.max(0, Math.min(100, (val / cap) * 100))}%`;
+          bEl.appendChild(row);
+        }
+      } else {
+        bEl.style.display = 'none';
+      }
 
       const rows = this.commitsOnly ? s.rows.filter((r) => r.kind === 'commit') : s.rows;
       const body = col.querySelector('.drows');

@@ -202,6 +202,15 @@
   #details .drow.tool { color: var(--ink-dim); font-size: 11px; }
   #details .drow.tests { color: var(--good); font-size: 11px; }
   #details .drow.tests.fail { color: var(--bad); }
+  #details .drow.reftests { color: var(--ref); font-size: 11px; }
+  #details .drow.reftests.fail { color: var(--bad); }
+  #details .dscore { display: none; margin-bottom: 10px; }
+  #details .dscomp { display: flex; align-items: center; gap: 8px; font-size: 10px; padding: 2px 0; }
+  #details .dscomp .sn { flex: 0 0 52px; color: var(--ink-dim); }
+  #details .dscomp .sbar { flex: 0 0 70px; height: 5px; background: #1a2340; border-radius: 3px; overflow: hidden; }
+  #details .dscomp .sbar i { display: block; height: 100%; background: var(--ref); }
+  #details .dscomp .sv { flex: 0 0 58px; }
+  #details .dscomp .sd { color: var(--ink-dim); overflow-wrap: anywhere; }
   #details .drow.done { color: var(--ink-dim); font-style: italic; font-size: 11px; }
   #details .drow.empty { color: var(--ink-dim); font-style: italic; border: 0; }
   #details .drow.commit { display: flex; gap: 8px; align-items: baseline; }
@@ -348,11 +357,13 @@
     <div class="dcol" data-side="a">
       <div class="dtop"><span class="dagent">—</span><span class="dbadge"></span></div>
       <div class="dmeta"></div>
+      <div class="dscore"></div>
       <div class="drows"></div>
     </div>
     <div class="dcol" data-side="b">
       <div class="dtop"><span class="dagent">—</span><span class="dbadge"></span></div>
       <div class="dmeta"></div>
+      <div class="dscore"></div>
       <div class="drows"></div>
     </div>
   </div>
