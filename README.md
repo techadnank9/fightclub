@@ -13,7 +13,9 @@ request, and deletes the loser's branch**.
 No canned animation. Every floor drop is a real commit. Every window pulse is
 a real test run. Every verdict is a real PR on GitHub.
 
-![night city](docs/screenshots/city-night.png)
+| Night | Day |
+|---|---|
+| ![night city](docs/screenshots/city-night.png) | ![day city](docs/screenshots/world-day.png) |
 
 ## Why this exists
 

@@ -31,7 +31,10 @@ export class City {
     });
     for (const bit of this.lampBits) bit.visible = !isDay;
     if (this.stars) this.stars.visible = !isDay;
-    if (this.apron) this.apron.material.color.setHex(isDay ? 0x76889c : 0x070a12);
+    // Day: match the World terrain's near-city shade (its 0x93a388 material
+    // color times the ~0.5 vertex gray it bakes near the plate) so the apron
+    // disappears into the grass instead of reading as a gray disc.
+    if (this.apron) this.apron.material.color.setHex(isDay ? 0x4a5244 : 0x070a12);
   }
 
   build(repos) {
@@ -50,9 +53,10 @@ export class City {
     ground.rotation.x = -Math.PI / 2;
     this.group.add(ground);
 
-    // Outer dark apron so the city doesn't float on void
+    // Dark apron skirt just past the plate; the World's terrain takes over
+    // beyond it (it used to be 1.6x when the city floated in void).
     const apron = new THREE.Mesh(
-      new THREE.CircleGeometry(Math.max(w, h) * 1.6, 48),
+      new THREE.CircleGeometry(Math.max(w, h) * 0.72, 48),
       new THREE.MeshStandardMaterial({ color: 0x070a12, roughness: 1 }),
     );
     apron.rotation.x = -Math.PI / 2;
@@ -93,6 +97,9 @@ export class City {
 
     this.addStreetlights(cols, rows, ox, oz, pitch);
     this.addStars();
+
+    // Let callers (the World builder) know how far the plate reaches.
+    return { half: Math.max(w, h) / 2 };
   }
 
   addStreetlights(cols, rows, ox, oz, pitch) {

@@ -13,7 +13,7 @@ export class CameraRig {
     this.controls.dampingFactor = 0.08;
     this.controls.maxPolarAngle = Math.PI * 0.49;
     this.controls.minDistance = 8;
-    this.controls.maxDistance = 320;
+    this.controls.maxDistance = 760;  // far enough to take in the whole world
 
     this.move = null;             // active tween
     this.orbit = null;            // slow auto-orbit {center, radius, speed, height}
