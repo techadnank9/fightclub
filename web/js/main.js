@@ -15,6 +15,9 @@ import { CameraRig } from './cameraRig.js';
 import { FightArena } from './fight.js';
 import { Hud } from './hud.js';
 import { Replay } from './replay.js';
+import { Details } from './details.js';
+import { History } from './history.js';
+import { connectSession } from './stream.js';
 import { subscribe, dispatch } from './events.js';
 import { startMockFight } from './mock.js';
 
@@ -58,6 +61,8 @@ const space = new SpaceLayer(scene);
 const rig = new CameraRig(camera, renderer.domElement);
 const hud = new Hud();
 const replay = new Replay();
+const details = new Details();
+const history = new History();
 const arena = new FightArena(scene, {
   shake: (amt) => rig.shake(amt),
   onPhase: () => {},
@@ -217,22 +222,7 @@ setupEl.querySelector('#setup-start').addEventListener('click', () => {
     }).then((r) => {
       if (!r.ok) throw new Error(`fight failed: ${r.status}`);
       return r.json();
-    }).then(({ session }) => {
-      const es = new EventSource(`/events?session=${session}`);
-      // Reconnects replay the session history from the server; skip what we
-      // have already dispatched instead of closing on the first error.
-      let seen = 0;
-      let sinceOpen = 0;
-      es.onopen = () => { sinceOpen = 0; };
-      es.onmessage = (m) => {
-        sinceOpen += 1;
-        if (sinceOpen <= seen) return;
-        seen = sinceOpen;
-        const ev = JSON.parse(m.data);
-        dispatch(ev);
-        if (ev.type === 'session.closed') es.close();
-      };
-    }).catch(() => {
+    }).then(({ session }) => connectSession(session)).catch(() => {
       // No backend running: fall back to the mock so the demo never bricks.
       startMockFight({ repo: repoName, task, a, b });
     });

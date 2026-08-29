@@ -5,6 +5,8 @@
 - POST /fight {repo, task, a, b}    -> {"session": id}; spawns the harness
   (or replays a JSONL fixture when replay is requested / no target repo set).
 - GET  /events?session=<id>          -> SSE stream of the fight's events.
+- GET  /fights                       -> past fights on disk, newest first,
+  each with a `replay` path that POST /fight accepts.
 - GET  /repos                        -> city/data/repos.json (falls back to
   the committed seed in web/data/repos.json).
 - /                                  -> serves web/ (the Three.js frontend).
@@ -238,6 +240,65 @@ async def stats():
         "wins_by_agent": row["wins_by_agent"],
         "avg_score": row["avg_score"],
     }
+
+
+def _summarize_log(path: Path) -> dict | None:
+    """Pull a fight's headline facts out of its JSONL log.
+
+    Cheap and defensive: logs are appended live, so a fight still running (or
+    one killed mid-write) has no verdict and may end in a partial line.
+    """
+    opened: dict = {}
+    verdict: dict = {}
+    events = 0
+    try:
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    ev = json.loads(line)
+                except json.JSONDecodeError:
+                    continue  # torn final line of a live log
+                events += 1
+                if ev.get("type") == "session.opened" and not opened:
+                    opened = ev
+                elif ev.get("type") == "verdict":
+                    verdict = ev
+    except OSError:
+        return None
+    if not opened:
+        return None
+    return {
+        "session": opened.get("session") or path.stem,
+        "repo": opened.get("repo", ""),
+        "task": opened.get("task", ""),
+        "events": events,
+        "at": round(path.stat().st_mtime, 3),
+        "replay": str(path.relative_to(ROOT)),
+        "winner": verdict.get("winner"),
+        "score": verdict.get("score"),
+        "pr": verdict.get("pr"),
+        "complete": bool(verdict),
+    }
+
+
+@app.get("/fights")
+async def fights(limit: int = 50):
+    """Past fights, newest first. Only the two directories /fight will replay."""
+    limit = min(200, max(1, limit))
+    paths = []
+    for d in (ROOT / ".fights", ROOT / "tests" / "fixtures"):
+        if d.is_dir():
+            paths.extend(d.glob("*.jsonl"))
+    paths.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    out = []
+    for path in paths[:limit]:
+        summary = await asyncio.to_thread(_summarize_log, path)
+        if summary:
+            out.append(summary)
+    return {"fights": out}
 
 
 @app.get("/repos")
