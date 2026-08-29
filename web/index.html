@@ -163,6 +163,57 @@
   #verdict .deleted { font-size: 11px; color: var(--bad); margin-top: 4px; }
   #verdict button { margin-top: 16px; }
 
+  /* ── Past fights ─────────────────────────── */
+  #topbar #history-open {
+    pointer-events: auto; cursor: pointer; background: transparent;
+    border: 1px solid var(--panel-border); border-radius: 6px; color: var(--ink);
+    font-family: inherit; font-size: 10px; letter-spacing: 1px; padding: 4px 8px;
+  }
+  #topbar #history-open:hover { background: rgba(255,255,255,.08); }
+
+  #history {
+    position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+    width: min(760px, 92vw); max-height: 72vh; z-index: 45; display: none;
+    padding: 16px 18px; overflow: hidden;
+  }
+  #history .hhead {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--panel-border);
+  }
+  #history .htitle { font-size: 13px; font-weight: bold; letter-spacing: 2px; }
+  #history .hsub { color: var(--ink-dim); font-size: 10px; margin-top: 3px; }
+  #history .hbtns { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+  #history .hspeed { font-size: 10px; color: var(--ink-dim); letter-spacing: 1px; }
+  #history .hspeed select {
+    background: #0a0f22; color: var(--ink); border: 1px solid var(--panel-border);
+    border-radius: 4px; font-family: inherit; font-size: 10px; padding: 3px 4px; margin-left: 4px;
+  }
+  #history .hbtns button { width: auto; flex: 0 0 auto; padding: 6px 12px; font-size: 10px; }
+
+  #history-list { margin-top: 10px; max-height: 56vh; overflow-y: auto; }
+  #history .hempty { color: var(--ink-dim); font-size: 11px; font-style: italic; padding: 14px 2px; line-height: 1.6; }
+  #history .hempty code { font-style: normal; color: var(--ink); }
+  #history .hrow {
+    display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    padding: 9px 8px; border-bottom: 1px dotted #1e2846; cursor: pointer; border-radius: 5px;
+  }
+  #history .hrow:hover { background: rgba(255,255,255,.05); }
+  #history .hmain { min-width: 0; }
+  #history .hrepo { font-size: 12px; }
+  #history .htask {
+    color: var(--ink-dim); font-size: 10px; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw;
+  }
+  #history .hside { text-align: right; flex: 0 0 auto; }
+  #history .hwin { font-size: 11px; font-weight: bold; }
+  #history .hwin.w-a { color: var(--a); }
+  #history .hwin.w-b { color: var(--b); }
+  #history .hwin.w-none { color: var(--ink-dim); font-weight: normal; font-style: italic; }
+  #history .hmeta { color: var(--ink-dim); font-size: 10px; margin-top: 2px; }
+  #history .hrow.partial { opacity: .72; }
+  #history .hrow.loading { opacity: .5; pointer-events: none; }
+  #history .hrow.failed .hmeta { color: var(--bad); }
+
   /* ── Full fight log overlay ──────────────── */
   #harness h3 { display: flex; justify-content: space-between; align-items: center; }
   #details-open {
@@ -252,6 +303,7 @@
   <span class="title">AGENT FIGHT CITY</span>
   <span class="sub">click a building to start a fight</span>
   <button id="theme-toggle" title="day / night">☀</button>
+  <button id="history-open" title="past fights (H)">⏱ HISTORY</button>
   <button id="space-dive" title="space dive" style="pointer-events:auto;cursor:pointer;background:transparent;border:1px solid var(--panel-border);border-radius:6px;color:var(--ink);font-size:14px;padding:2px 8px;">🌍</button>
 </div>
 
@@ -340,6 +392,27 @@
   <div class="pr"></div>
   <div class="deleted"></div>
   <button class="primary" id="verdict-close">BACK TO CITY</button>
+</div>
+
+<div id="history" class="panel">
+  <div class="hhead">
+    <div>
+      <div class="htitle">PAST FIGHTS</div>
+      <div class="hsub">replayed through the live event path — the city animates them identically</div>
+    </div>
+    <div class="hbtns">
+      <label class="hspeed">speed
+        <select id="history-speed">
+          <option value="1">1x</option>
+          <option value="4" selected>4x</option>
+          <option value="10">10x</option>
+          <option value="50">50x</option>
+        </select>
+      </label>
+      <button class="ghost" id="history-close">CLOSE</button>
+    </div>
+  </div>
+  <div id="history-list"></div>
 </div>
 
 <div id="details" class="panel">

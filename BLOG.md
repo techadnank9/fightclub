@@ -17,3 +17,4 @@ What broke and what we changed, one line each, newest last.
 - Replay `scrubTo()` updated the label but not `range.value`, so the slider handle sat at the end while the label read "event 1/N".
 - Harness feed was a 230px rolling ticker capped at 40 rows, so commits scrolled away and wrapped mid-message; added a full fight log overlay (`⛶ FULL LOG` / `L`) with per-fighter commit lists, a commits-only filter, findings and verdict.
 - Full fight log predated the referee schema additions: `tests.result` with `by:'referee'` was rendered as a fighter's own run, and `verdict.breakdown` was ignored; both are now shown distinctly.
+- Fights were stored (.fights/*.jsonl + ClickHouse) but nothing listed them: added GET /fights and a PAST FIGHTS panel that replays one through POST /fight {replay}, so old fights animate through the ordinary live event path.
