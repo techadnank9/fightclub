@@ -13,7 +13,7 @@ request, and deletes the loser's branch**.
 No canned animation. Every floor drop is a real commit. Every window pulse is
 a real test run. Every verdict is a real PR on GitHub.
 
-**Live demo: https://web-9s908tuz6-mdadnan456gmailcoms-projects.vercel.app**
+**Live demo: https://agentfightclub.vercel.app**
 
 ![the city](docs/screenshots/world-day.png)
 
