@@ -27,6 +27,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from server import analytics
+
 ROOT = Path(__file__).resolve().parent.parent
 
 app = FastAPI(title="agent-fight-city")
@@ -41,6 +43,7 @@ class Session:
 
     def publish(self, event: dict) -> None:
         self.history.append(event)
+        analytics.record(self.id, event)  # non-blocking; no-op if unconfigured
         if event.get("type") == "session.closed":
             self.done = True
         for q in list(self.queues):
@@ -198,6 +201,43 @@ async def screenshot(request: Request):
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(base64.b64decode(data))
     return {"saved": str(out.relative_to(ROOT))}
+
+
+# One query: total fights ever seen, average verdict score across both sides,
+# and wins keyed by the winning fighter's agent name (verdict only says which
+# *side* won, so join back to that session's fighter.started for the name).
+_STATS_SQL = """
+SELECT
+  (SELECT uniqExact(session) FROM fight_events) AS total_fights,
+  (SELECT avg((JSONExtractFloat(payload, 'score', 'a')
+             + JSONExtractFloat(payload, 'score', 'b')) / 2)
+     FROM fight_events WHERE type = 'verdict') AS avg_score,
+  (SELECT sumMap(map(f.agent, 1))
+     FROM (SELECT session, JSONExtractString(payload, 'winner') AS winner
+             FROM fight_events WHERE type = 'verdict') AS v
+     INNER JOIN (SELECT session,
+                        JSONExtractString(payload, 'side') AS side,
+                        JSONExtractString(payload, 'agent') AS agent
+                   FROM fight_events WHERE type = 'fighter.started') AS f
+       ON f.session = v.session AND f.side = v.winner) AS wins_by_agent
+SETTINGS output_format_json_quote_64bit_integers = 0
+FORMAT JSON
+"""
+
+
+@app.get("/stats")
+async def stats():
+    """Fight stats out of ClickHouse; 503 when the warehouse is unreachable."""
+    try:
+        raw = await asyncio.to_thread(analytics.query, _STATS_SQL)
+        row = json.loads(raw)["data"][0]
+    except Exception:
+        raise HTTPException(503, "analytics backend unreachable")
+    return {
+        "total_fights": row["total_fights"],
+        "wins_by_agent": row["wins_by_agent"],
+        "avg_score": row["avg_score"],
+    }
 
 
 @app.get("/repos")

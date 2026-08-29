@@ -13,11 +13,13 @@ request, and deletes the loser's branch**.
 No canned animation. Every floor drop is a real commit. Every window pulse is
 a real test run. Every verdict is a real PR on GitHub.
 
-| Night | Day |
-|---|---|
-| ![night city](docs/screenshots/city-night.png) | ![day city](docs/screenshots/world-day.png) |
+**Live demo: https://web-9s908tuz6-mdadnan456gmailcoms-projects.vercel.app**
 
-![verdict — referee scorecard](docs/screenshots/fight-verdict.png)
+![the city](docs/screenshots/world-day.png)
+
+*Two fighters building their towers, floor by committed floor:*
+
+![agents building](docs/screenshots/agents-building.png)
 
 ## Why this exists
 
@@ -161,10 +163,9 @@ uvicorn server.app:app --port 8000
 # open http://localhost:8000  → click a building → START FIGHT
 ```
 
-No API keys? Add `?mock=1` to the URL for a scripted fight, or hit START
-FIGHT anyway — the server replays a recorded real fight so the demo never
-bricks. With keys (`harness/.env`, see `.env` keys in `harness/llm.py`) every
-fight is live: real sandboxes, real commits, real PR.
+No API keys configured? START FIGHT still plays a full fight from a recorded
+session, so the demo always runs. With keys in `harness/.env` (see
+`harness/llm.py`) every fight is live: real sandboxes, real commits, real PR.
 
 ```bash
 # fight from the terminal, no browser
@@ -176,9 +177,9 @@ python -m harness.fight --repo vercel/next.js \
 ## The event contract
 
 Ten event types, one JSONL line each, from `session.opened` to
-`session.closed`. The mock feed, the replay scrubber, the SSE stream, and the
-real harness all speak exactly this schema — swap any of them and the city
-cannot tell the difference. See `CLAUDE.md` for the full contract.
+`session.closed`. The replay scrubber, the SSE stream, and the live harness
+all speak exactly this schema — swap any of them and the city cannot tell
+the difference. See `CLAUDE.md` for the full contract.
 
 ## What broke along the way
 
