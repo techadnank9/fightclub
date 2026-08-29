@@ -1,0 +1,8 @@
+# Server: FastAPI + uvicorn for POST /fight, SSE /events, static web/.
+# Harness: certifi for TLS to the TrueFoundry gateway (stdlib urllib otherwise).
+# Tests: pytest + httpx (FastAPI test client transport).
+fastapi>=0.110
+uvicorn>=0.29
+certifi>=2024.2.2
+pytest>=8.0
+httpx>=0.27

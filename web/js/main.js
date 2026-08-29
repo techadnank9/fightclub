@@ -94,7 +94,9 @@ document.querySelector('#theme-toggle').addEventListener('click', () => {
 });
 
 // ── Load city data ─────────────────────────────────────────────
-const data = await fetch('./data/repos.json').then((r) => r.json());
+// Prefer the server's /repos (live Bright Data scrape); fall back to the seed.
+const data = await fetch('/repos').then((r) => (r.ok ? r.json() : Promise.reject()))
+  .catch(() => fetch('./data/repos.json').then((r) => r.json()));
 city.build(data.repos);
 
 // Idle ambient orbit over the city
@@ -165,7 +167,8 @@ setupEl.querySelector('#setup-start').addEventListener('click', () => {
   const a = setupEl.querySelector('#agent-a').value;
   const b = setupEl.querySelector('#agent-b').value;
   setupEl.style.display = 'none';
-  const useMock = new URLSearchParams(location.search).get('mock') !== '0';
+  // Per the brief: ?mock=1 forces the mock feed; otherwise use the backend.
+  const useMock = new URLSearchParams(location.search).get('mock') === '1';
   if (useMock) {
     startMockFight({ repo: selected.repo.full_name, task, a, b });
   } else {
@@ -173,13 +176,20 @@ setupEl.querySelector('#setup-start').addEventListener('click', () => {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ repo: selected.repo.full_name, task, a, b }),
-    }).then((r) => r.json()).then(({ session }) => {
+    }).then((r) => {
+      if (!r.ok) throw new Error(`fight failed: ${r.status}`);
+      return r.json();
+    }).then(({ session }) => {
       const es = new EventSource(`/events?session=${session}`);
       es.onmessage = (m) => {
         const ev = JSON.parse(m.data);
         dispatch(ev);
         if (ev.type === 'session.closed') es.close();
       };
+      es.onerror = () => es.close();
+    }).catch(() => {
+      // No backend running: fall back to the mock so the demo never bricks.
+      startMockFight({ repo: selected.repo.full_name, task, a, b });
     });
   }
 });
