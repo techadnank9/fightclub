@@ -72,7 +72,7 @@ const IMG = (n) => `docs/deck/${n}.png`;
   });
   s.addImage({ path: IMG('build'), x: 0.7, y: 1.35, w: 5.9, h: 4.86 });
   s.addImage({ path: IMG('verdict'), x: 6.85, y: 1.35, w: 5.78, h: 4.86 });
-  s.addText('they build, commit by commit…', {
+  s.addText('both agents build at once — every floor is one of their commits', {
     x: 0.7, y: 6.35, w: 5.9, h: 0.45, fontSize: 15, italic: true, color: B,
     fontFace: 'Cambria', isTextBox: true, margin: 0, align: 'center',
   });
