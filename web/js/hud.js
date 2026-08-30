@@ -28,6 +28,8 @@ export class Hud {
       case 'fighter.started': {
         const f = this.fighter(ev.side);
         f.querySelector('.nm').textContent = ev.agent.toUpperCase();
+        this.scorecard.querySelector(`.col[data-side="${ev.side}"] .agent`)
+          .textContent = ev.agent.toLowerCase();
         this.setState(ev.side, 'working', 'spinning up sandbox');
         this.sandbox(ev.sandbox, 'running');
         this.logLine(`${ev.agent} enters (${ev.branch})`, `t-${ev.side}`);
@@ -165,6 +167,7 @@ export class Hud {
     for (const col of this.scorecard.querySelectorAll('.col')) {
       col.classList.remove('winner');
       col.querySelector('.total').textContent = '—';
+      col.querySelector('.agent').textContent = '—';
       for (const row of col.querySelectorAll('.comp')) {
         row.querySelector('.val').textContent = '—';
         row.querySelector('.bar i').style.width = '0%';
